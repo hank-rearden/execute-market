@@ -1,0 +1,225 @@
+
+name: EXECUTE Market - Historical Data
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  collect-history:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+
+      - name: Download and validate NSE history
+        shell: bash
+        run: |
+          python - <<'PY'
+          import csv
+          import io
+          import os
+          import time
+          import zipfile
+          import urllib.request
+          import urllib.error
+          from datetime import datetime, timedelta
+          from zoneinfo import ZoneInfo
+
+          SYMBOLS = {"DLF", "HDFCLIFE", "TMCV"}
+          TARGET_SESSIONS = 10
+          MAX_CALENDAR_DAYS = 30
+
+          BASE_URL = (
+              "https://nsearchives.nseindia.com/"
+              "content/cm/"
+              "BhavCopy_NSE_CM_0_0_0_{}_F_0000.csv.zip"
+          )
+
+          HEADERS = {
+              "User-Agent": "Mozilla/5.0",
+              "Accept": "*/*",
+              "Referer": "https://www.nseindia.com/"
+          }
+
+          REQUIRED = {
+              "TradDt", "TckrSymb", "SctySrs",
+              "OpnPric", "HghPric", "LwPric",
+              "ClsPric", "TtlTradgVol"
+          }
+
+          today = datetime.now(
+              ZoneInfo("Asia/Kolkata")
+          ).date()
+
+          records = []
+          sessions = 0
+
+          os.makedirs("output", exist_ok=True)
+
+          for days_back in range(MAX_CALENDAR_DAYS):
+              if sessions >= TARGET_SESSIONS:
+                  break
+
+              date = today - timedelta(days=days_back)
+              url = BASE_URL.format(
+                  date.strftime("%Y%m%d")
+              )
+
+              print("Checking", date, flush=True)
+
+              try:
+                  req = urllib.request.Request(
+                      url, headers=HEADERS
+                  )
+
+                  with urllib.request.urlopen(
+                      req, timeout=20
+                  ) as response:
+                      content = response.read()
+
+                  with zipfile.ZipFile(
+                      io.BytesIO(content)
+                  ) as archive:
+                      names = [
+                          name for name in archive.namelist()
+                          if name.lower().endswith(".csv")
+                      ]
+                      if not names:
+                          raise ValueError("No CSV in ZIP")
+
+                      with archive.open(names[0]) as f:
+                          reader = csv.DictReader(
+                              io.TextIOWrapper(
+                                  f, encoding="utf-8-sig"
+                              )
+                          )
+                          columns = set(reader.fieldnames or [])
+                          if not REQUIRED.issubset(columns):
+                              raise ValueError(
+                                  "Missing columns: "
+                                  + str(REQUIRED - columns)
+                              )
+                          rows = list(reader)
+
+                  selected = {}
+                  for row in rows:
+                      symbol = row["TckrSymb"].strip()
+                      series = row["SctySrs"].strip()
+
+                      if symbol in SYMBOLS and series == "EQ":
+                          if symbol in selected:
+                              raise ValueError(
+                                  "Duplicate EQ symbol: " + symbol
+                              )
+                          selected[symbol] = row
+
+                  if set(selected) != SYMBOLS:
+                      raise ValueError(
+                          "Missing watchlist symbols: "
+                          + str(SYMBOLS - set(selected))
+                      )
+
+                  day_records = []
+                  for symbol in sorted(SYMBOLS):
+                      row = selected[symbol]
+                      values = [
+                          float(row[key])
+                          for key in (
+                              "OpnPric", "HghPric",
+                              "LwPric", "ClsPric"
+                          )
+                      ]
+                      opn, high, low, close = values
+                      volume = int(float(
+                          row["TtlTradgVol"]
+                      ))
+
+                      if (
+                          min(values) <= 0
+                          or volume < 0
+                          or low > min(opn, close)
+                          or high < max(opn, close)
+                          or high < low
+                      ):
+                          raise ValueError(
+                              "Invalid OHLCV: " + symbol
+                          )
+
+                      day_records.append({
+                          "date": date.isoformat(),
+                          "symbol": symbol,
+                          "open": opn,
+                          "high": high,
+                          "low": low,
+                          "close": close,
+                          "volume": volume
+                      })
+
+                  records.extend(day_records)
+                  sessions += 1
+                  print(
+                      "VALID:", date,
+                      "sessions:", sessions,
+                      flush=True
+                  )
+
+              except urllib.error.HTTPError as e:
+                  if e.code == 404:
+                      print("Not published:", date)
+                  else:
+                      print("HTTP error:", e.code)
+                      raise
+
+              except Exception as e:
+                  print("Data error:", repr(e))
+                  raise
+
+              time.sleep(0.5)
+
+          if sessions != TARGET_SESSIONS:
+              raise SystemExit(
+                  f"Only {sessions} of "
+                  f"{TARGET_SESSIONS} sessions collected"
+              )
+
+          records.sort(
+              key=lambda r: (r["date"], r["symbol"])
+          )
+
+          output = "output/nse_history_10_sessions.csv"
+
+          with open(
+              output, "w", newline="", encoding="utf-8"
+          ) as f:
+              writer = csv.DictWriter(
+                  f,
+                  fieldnames=[
+                      "date", "symbol", "open",
+                      "high", "low", "close", "volume"
+                  ]
+              )
+              writer.writeheader()
+              writer.writerows(records)
+
+          print("SUCCESS")
+          print("Trading sessions:", sessions)
+          print("Total stock records:", len(records))
+          print("First date:", records[0]["date"])
+          print("Last date:", records[-1]["date"])
+          print("File:", output)
+          PY
+
+      - name: Upload historical data CSV
+        uses: actions/upload-artifact@v4
+        with:
+          name: nse-history-10-sessions
+          path: output/nse_history_10_sessions.csv
+          if-no-files-found: error
+          retention-days: 7
