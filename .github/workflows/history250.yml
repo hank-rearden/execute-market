@@ -1,0 +1,169 @@
+name: EXECUTE Market - Historical Data 250
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '30 12 * * 1-5'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: execute-market-history
+  cancel-in-progress: false
+
+jobs:
+  collect-history:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+
+      - name: Collect and validate NSE data
+        shell: bash
+        run: |
+          python - <<'PYCODE'
+          import csv
+          import io
+          import os
+          import time
+          import zipfile
+          import urllib.error
+          import urllib.request
+          from datetime import datetime, timedelta
+          from pathlib import Path
+          from zoneinfo import ZoneInfo
+          
+          SYMBOLS = ('DLF', 'HDFCLIFE', 'TMCV')
+          TARGET = 250
+          LOOKBACK = 430
+          FILE = Path('data/nse_history.csv')
+          URL = ('https://nsearchives.nseindia.com/content/cm/'
+                 'BhavCopy_NSE_CM_0_0_0_{}_F_0000.csv.zip')
+          HEADERS = {'User-Agent': 'Mozilla/5.0', 'Accept': '*/*',
+                     'Referer': 'https://www.nseindia.com/'}
+          FIELDS = ['date', 'symbol', 'open', 'high', 'low', 'close', 'volume']
+          NEEDED = {'TradDt', 'TckrSymb', 'SctySrs', 'OpnPric',
+                    'HghPric', 'LwPric', 'ClsPric', 'TtlTradgVol'}
+          
+          def validate(row):
+              o, h, l, c = [float(row[k]) for k in ('open', 'high', 'low', 'close')]
+              v = int(row['volume'])
+              if not (0 < l <= min(o, c) <= max(o, c) <= h and v >= 0):
+                  raise ValueError('Invalid OHLCV: ' + str(row))
+              datetime.strptime(row['date'], '%Y-%m-%d')
+              return dict(date=row['date'], symbol=row['symbol'], open=o,
+                          high=h, low=l, close=c, volume=v)
+          
+          existing = {}
+          if FILE.exists():
+              with FILE.open(newline='', encoding='utf-8') as f:
+                  for r in csv.DictReader(f):
+                      if r['symbol'] not in SYMBOLS:
+                          continue
+                      v = validate(r)
+                      k = (v['date'], v['symbol'])
+                      if k in existing:
+                          raise ValueError('Duplicate existing row: ' + str(k))
+                      existing[k] = v
+          print('Existing rows:', len(existing), flush=True)
+          
+          now = datetime.now(ZoneInfo('Asia/Kolkata'))
+          # Do not request today's incomplete session before 19:00 IST.
+          last = now.date() if now.hour >= 19 else now.date() - timedelta(days=1)
+          complete_dates = {d for d in (k[0] for k in existing)
+                            if all((d, s) in existing for s in SYMBOLS)}
+          new = 0
+          for age in range(LOOKBACK):
+              day = last - timedelta(days=age)
+              ds = day.isoformat()
+              if ds in complete_dates:
+                  if len(complete_dates) >= TARGET:
+                      break
+                  continue
+              if day.weekday() >= 5:
+                  # Exceptional weekend sessions require separate exchange-calendar validation.
+                  continue
+              url = URL.format(day.strftime('%Y%m%d'))
+              try:
+                  req = urllib.request.Request(url, headers=HEADERS)
+                  with urllib.request.urlopen(req, timeout=20) as response:
+                      raw = response.read()
+                  with zipfile.ZipFile(io.BytesIO(raw)) as archive:
+                      names = [n for n in archive.namelist() if n.lower().endswith('.csv')]
+                      if len(names) != 1:
+                          raise ValueError('Expected exactly one CSV: ' + str(names))
+                      with archive.open(names[0]) as stream:
+                          reader = csv.DictReader(io.TextIOWrapper(stream, encoding='utf-8-sig'))
+                          missing = NEEDED - set(reader.fieldnames or [])
+                          if missing:
+                              raise ValueError('Missing columns: ' + str(missing))
+                          matches = [r for r in reader if r['SctySrs'].strip() == 'EQ'
+                                     and r['TckrSymb'].strip() in SYMBOLS]
+                  if len(matches) != len(SYMBOLS) or {r['TckrSymb'].strip() for r in matches} != set(SYMBOLS):
+                      raise ValueError('Missing or duplicate symbols on ' + ds)
+                  parsed = {}
+                  for r in matches:
+                      symbol = r['TckrSymb'].strip()
+                      row = dict(date=ds, symbol=symbol, open=r['OpnPric'],
+                                 high=r['HghPric'], low=r['LwPric'], close=r['ClsPric'],
+                                 volume=r['TtlTradgVol'])
+                      parsed[(ds, symbol)] = validate(row)
+                  existing.update(parsed)
+                  complete_dates.add(ds)
+                  new += 1
+                  print('Downloaded', ds, 'complete sessions:', len(complete_dates), flush=True)
+                  if len(complete_dates) >= TARGET:
+                      break
+                  time.sleep(0.2)
+              except urllib.error.HTTPError as e:
+                  if e.code == 404:
+                      print('Unavailable:', ds, flush=True)
+                      continue
+                  raise
+          
+          if len(complete_dates) < TARGET:
+              raise SystemExit(f'FAIL: only {len(complete_dates)} complete sessions; need {TARGET}')
+          
+          selected_dates = sorted(complete_dates)[-TARGET:]
+          rows = [existing[(d, s)] for d in selected_dates for s in SYMBOLS]
+          FILE.parent.mkdir(parents=True, exist_ok=True)
+          tmp = FILE.with_suffix('.tmp')
+          with tmp.open('w', newline='', encoding='utf-8') as f:
+              writer = csv.DictWriter(f, fieldnames=FIELDS)
+              writer.writeheader()
+              writer.writerows(rows)
+          os.replace(tmp, FILE)
+          print('PASS: sessions=', len(selected_dates), 'rows=', len(rows),
+                'new_sessions=', new, 'range=', selected_dates[0], selected_dates[-1], flush=True)
+          print('Note: prices are unadjusted; corporate actions and special sessions need review.')
+          PYCODE
+
+      - name: Upload CSV artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: nse-history-250
+          path: data/nse_history.csv
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Commit updated history
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/nse_history.csv
+          if ! git diff --cached --quiet; then
+            git commit -m "Update NSE historical data"
+            git push
+          else
+            echo "No data changes"
+          fi
