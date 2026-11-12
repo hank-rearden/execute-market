@@ -14,7 +14,7 @@ jobs:
 
     steps:
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.11'
 
@@ -26,104 +26,221 @@ jobs:
           import io
           import zipfile
           import urllib.request
+          import urllib.error
           from datetime import datetime, timedelta
           from zoneinfo import ZoneInfo
 
-          base = (
+          print("================================")
+          print("EXECUTE Market v1.0")
+          print("NSE Data Validation - Version 2")
+          print("================================")
+
+          BASE_URL = (
               "https://nsearchives.nseindia.com/"
-              "content/cm/Bhavcopy_{}_CM_0_0_0.csv.zip"
+              "content/cm/"
+              "BhavCopy_NSE_CM_0_0_0_{}_F_0000.csv.zip"
           )
-          today = datetime.now(ZoneInfo("Asia/Kolkata")).date()
-          headers = {
+
+          HEADERS = {
               "User-Agent": "Mozilla/5.0",
               "Accept": "*/*",
               "Referer": "https://www.nseindia.com/"
           }
 
-          print("EXECUTE Market v1.0")
-          print("Testing NSE historical data access")
+          REQUIRED_COLUMNS = {
+              "TckrSymb",
+              "OpnPric",
+              "HghPric",
+              "LwPric",
+              "ClsPric",
+              "TtlTradgVol"
+          }
+
+          WATCHLIST = [
+              "DLF",
+              "HDFCLIFE",
+              "TMCV"
+          ]
+
+          today = datetime.now(
+              ZoneInfo("Asia/Kolkata")
+          ).date()
 
           success = False
 
-          for days_back in range(1, 8):
-              date = today - timedelta(days=days_back)
-              url = base.format(date.strftime("%d%m%Y"))
+          for days_back in range(0, 11):
+
+              date = today - timedelta(
+                  days=days_back
+              )
+
+              date_string = date.strftime(
+                  "%Y%m%d"
+              )
+
+              url = BASE_URL.format(
+                  date_string
+              )
+
+              print()
               print("Checking:", date.isoformat())
 
               try:
                   request = urllib.request.Request(
-                      url, headers=headers
+                      url,
+                      headers=HEADERS
                   )
+
                   with urllib.request.urlopen(
-                      request, timeout=20
+                      request,
+                      timeout=20
                   ) as response:
                       data = response.read()
+
+                  if not zipfile.is_zipfile(
+                      io.BytesIO(data)
+                  ):
+                      raise ValueError(
+                          "Downloaded file is not ZIP"
+                      )
 
                   with zipfile.ZipFile(
                       io.BytesIO(data)
                   ) as archive:
-                      csv_names = [
-                          n for n in archive.namelist()
-                          if n.lower().endswith(".csv")
-                      ]
-                      if not csv_names:
-                          raise ValueError("No CSV in ZIP")
 
-                      with archive.open(csv_names[0]) as f:
+                      csv_files = [
+                          name
+                          for name in archive.namelist()
+                          if name.lower().endswith(
+                              ".csv"
+                          )
+                      ]
+
+                      if not csv_files:
+                          raise ValueError(
+                              "ZIP contains no CSV"
+                          )
+
+                      with archive.open(
+                          csv_files[0]
+                      ) as file:
+
                           reader = csv.DictReader(
                               io.TextIOWrapper(
-                                  f, encoding="utf-8-sig"
+                                  file,
+                                  encoding="utf-8-sig"
                               )
                           )
-                          columns = reader.fieldnames or []
+
+                          columns = (
+                              reader.fieldnames or []
+                          )
+
                           rows = list(reader)
 
-                  print("Data date:", date.isoformat())
+                  print("CSV:", csv_files[0])
+                  print("Total rows:", len(rows))
                   print("Columns:", columns)
-                  print("Rows:", len(rows))
 
-                  required = {
-                      "TckrSymb",
-                      "OpnPric",
-                      "HghPric",
-                      "LwPric",
-                      "ClsPric",
-                      "TtlTradgVol"
-                  }
+                  missing = (
+                      REQUIRED_COLUMNS -
+                      set(columns)
+                  )
 
-                  missing = required - set(columns)
                   if missing:
                       raise ValueError(
-                          f"Missing columns: {missing}"
+                          "Missing columns: "
+                          + str(missing)
+                      )
+
+                  if not rows:
+                      raise ValueError(
+                          "CSV contains no data"
+                      )
+
+                  equity_rows = [
+                      row for row in rows
+                      if row.get(
+                          "SctySrs", ""
+                      ).strip() == "EQ"
+                  ]
+
+                  print(
+                      "EQ rows:",
+                      len(equity_rows)
+                  )
+
+                  if not equity_rows:
+                      raise ValueError(
+                          "No EQ series found"
                       )
 
                   symbols = {
-                      row.get("TckrSymb", "").strip()
-                      for row in rows
+                      row.get(
+                          "TckrSymb", ""
+                      ).strip(): row
+                      for row in equity_rows
                   }
 
-                  for symbol in [
-                      "DLF", "HDFCLIFE", "TMCV"
-                  ]:
-                      print(
-                          symbol,
-                          "FOUND" if symbol in symbols
-                          else "NOT FOUND"
-                      )
+                  print()
+                  print("WATCHLIST VALIDATION")
+
+                  for symbol in WATCHLIST:
+
+                      if symbol in symbols:
+                          row = symbols[symbol]
+
+                          print(
+                              symbol,
+                              "FOUND",
+                              "Close:",
+                              row.get("ClsPric"),
+                              "Volume:",
+                              row.get("TtlTradgVol")
+                          )
+
+                      else:
+                          print(
+                              symbol,
+                              "NOT FOUND"
+                          )
+
+                  print()
+                  print("DATA DATE:", date)
+                  print("VALIDATION PASSED")
 
                   success = True
                   break
 
-              except Exception as error:
+              except urllib.error.HTTPError as e:
                   print(
-                      type(error).__name__,
-                      str(error)[:200]
+                      "HTTP ERROR:",
+                      e.code,
+                      e.reason
+                  )
+
+              except urllib.error.URLError as e:
+                  print(
+                      "NETWORK ERROR:",
+                      str(e.reason)
+                  )
+
+              except Exception as e:
+                  print(
+                      "VALIDATION ERROR:",
+                      type(e).__name__,
+                      str(e)
                   )
 
           if not success:
-              raise SystemExit(
-                  "FAILED: No valid NSE bhavcopy found"
+              print()
+              print("VALIDATION FAILED")
+              print(
+                  "No valid NSE bhavcopy "
+                  "found in the last 11 days"
               )
+              raise SystemExit(1)
 
-          print("PASSED: NSE data accessible")
+          print()
+          print("EXECUTE Market data test complete")
           PY
