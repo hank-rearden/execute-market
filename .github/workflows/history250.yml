@@ -214,12 +214,28 @@ jobs:
       - name: Commit updated history
         shell: bash
         run: |
+          set -e
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add data/nse_history.csv
-          if ! git diff --cached --quiet; then
-            git commit -m "Update NSE historical data"
-            git push
-          else
+          if git diff --cached --quiet; then
             echo "No data changes"
+            exit 0
           fi
+          git commit -m "Update NSE historical data"
+          for attempt in 1 2 3; do
+            git fetch origin main
+            git rebase origin/main || {
+              git rebase --abort
+              echo "Rebase conflict: manual review required"
+              exit 1
+            }
+            if git push origin HEAD:main; then
+              echo "Historical data saved successfully"
+              exit 0
+            fi
+            echo "Push conflict; retrying..."
+            sleep 3
+          done
+          echo "Failed to push after three attempts"
+          exit 1
