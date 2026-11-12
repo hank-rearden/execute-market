@@ -1,0 +1,129 @@
+
+name: EXECUTE Market - NSE Data Test
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-nse:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Test NSE connectivity and data
+        shell: bash
+        run: |
+          python - <<'PY'
+          import csv
+          import io
+          import zipfile
+          import urllib.request
+          from datetime import datetime, timedelta
+          from zoneinfo import ZoneInfo
+
+          base = (
+              "https://nsearchives.nseindia.com/"
+              "content/cm/Bhavcopy_{}_CM_0_0_0.csv.zip"
+          )
+          today = datetime.now(ZoneInfo("Asia/Kolkata")).date()
+          headers = {
+              "User-Agent": "Mozilla/5.0",
+              "Accept": "*/*",
+              "Referer": "https://www.nseindia.com/"
+          }
+
+          print("EXECUTE Market v1.0")
+          print("Testing NSE historical data access")
+
+          success = False
+
+          for days_back in range(1, 8):
+              date = today - timedelta(days=days_back)
+              url = base.format(date.strftime("%d%m%Y"))
+              print("Checking:", date.isoformat())
+
+              try:
+                  request = urllib.request.Request(
+                      url, headers=headers
+                  )
+                  with urllib.request.urlopen(
+                      request, timeout=20
+                  ) as response:
+                      data = response.read()
+
+                  with zipfile.ZipFile(
+                      io.BytesIO(data)
+                  ) as archive:
+                      csv_names = [
+                          n for n in archive.namelist()
+                          if n.lower().endswith(".csv")
+                      ]
+                      if not csv_names:
+                          raise ValueError("No CSV in ZIP")
+
+                      with archive.open(csv_names[0]) as f:
+                          reader = csv.DictReader(
+                              io.TextIOWrapper(
+                                  f, encoding="utf-8-sig"
+                              )
+                          )
+                          columns = reader.fieldnames or []
+                          rows = list(reader)
+
+                  print("Data date:", date.isoformat())
+                  print("Columns:", columns)
+                  print("Rows:", len(rows))
+
+                  required = {
+                      "TckrSymb",
+                      "OpnPric",
+                      "HghPric",
+                      "LwPric",
+                      "ClsPric",
+                      "TtlTradgVol"
+                  }
+
+                  missing = required - set(columns)
+                  if missing:
+                      raise ValueError(
+                          f"Missing columns: {missing}"
+                      )
+
+                  symbols = {
+                      row.get("TckrSymb", "").strip()
+                      for row in rows
+                  }
+
+                  for symbol in [
+                      "DLF", "HDFCLIFE", "TMCV"
+                  ]:
+                      print(
+                          symbol,
+                          "FOUND" if symbol in symbols
+                          else "NOT FOUND"
+                      )
+
+                  success = True
+                  break
+
+              except Exception as error:
+                  print(
+                      type(error).__name__,
+                      str(error)[:200]
+                  )
+
+          if not success:
+              raise SystemExit(
+                  "FAILED: No valid NSE bhavcopy found"
+              )
+
+          print("PASSED: NSE data accessible")
+          PY
