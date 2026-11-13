@@ -1,6 +1,6 @@
 {
-  "generated_utc": "2026-11-13T04:59:35.745344+00:00",
-  "flags_count": 14,
+  "generated_utc": "2026-11-13T05:04:43.017286+00:00",
+  "flags_count": 16,
   "flags": [
     {
       "symbol": "ADANIPOWER",
@@ -39,12 +39,30 @@
       "reason": "Large move; independently check split/bonus/demerger/symbol history"
     },
     {
+      "symbol": "HDFCAMC",
+      "previous_date": "2025-11-25",
+      "date": "2025-11-26",
+      "previous_close": 5336.5,
+      "close": 2679.0,
+      "change_pct": -49.799,
+      "reason": "Large move; independently check split/bonus/demerger/symbol history"
+    },
+    {
       "symbol": "HDFCBANK",
       "previous_date": "2025-08-25",
       "date": "2025-08-26",
       "previous_close": 1964.1,
       "close": 973.4,
       "change_pct": -50.44,
+      "reason": "Large move; independently check split/bonus/demerger/symbol history"
+    },
+    {
+      "symbol": "KOTAKBANK",
+      "previous_date": "2026-01-13",
+      "date": "2026-01-14",
+      "previous_close": 2132.6,
+      "close": 421.0,
+      "change_pct": -80.259,
       "reason": "Large move; independently check split/bonus/demerger/symbol history"
     },
     {
