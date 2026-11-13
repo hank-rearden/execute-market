@@ -1,0 +1,35 @@
+name: EXECUTE Market - Stage 4 Auto Continue
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: execute-market-stage4-archive
+  cancel-in-progress: false
+
+jobs:
+  continue-archive:
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Continue archived dates in validated 180-day batches
+        run: python -u stage4_auto_continue.py
+      - name: Upload final research archive
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: execute-market-stage4-auto-archive
+          path: |
+            data/stage4_udiff_history.csv
+            reports/stage4_archive_status.json
+            reports/stage4_corporate_action_audit.json
+          retention-days: 30
