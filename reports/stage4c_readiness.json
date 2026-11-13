@@ -1,0 +1,90 @@
+{
+  "generated_utc": "2026-11-13T05:40:50.327685+00:00",
+  "raw_rows": 55719,
+  "stage4b_conservative_rows": 54557,
+  "trading_sessions": 581,
+  "symbols": 100,
+  "data_quality_issue_count": 0,
+  "unreconciled_10_to_25_percent_moves": 80,
+  "membership_intervals": 0,
+  "membership_bad_or_unsourced_intervals": 0,
+  "membership_verified_source_count": 0,
+  "complete_point_in_time_sessions": 0,
+  "incomplete_point_in_time_sessions": 581,
+  "point_in_time_rows": 0,
+  "historical_membership_verified": false,
+  "corporate_action_coverage_complete": false,
+  "dividend_total_return_verified": false,
+  "backtest_ready": false,
+  "real_money_ready": false,
+  "readiness": "BLOCKED \u2014 historical membership, complete corporate actions, and dividends not certified",
+  "limitations": [
+    "Current-universe-only archive cannot recover prices of historical constituents absent from archive",
+    "10-25 percent close jumps are screening flags, not confirmed corporate actions",
+    "Dividends and sub-10-percent corporate actions not reconciled",
+    "No independent historical constituent list verified across every date",
+    "No official Nifty 100 TRI comparison"
+  ],
+  "sample_incomplete_dates": [
+    {
+      "date": "2024-07-08",
+      "expected": 100,
+      "observed": 0,
+      "reason": "No fully sourced historical membership intervals"
+    },
+    {
+      "date": "2024-07-09",
+      "expected": 100,
+      "observed": 0,
+      "reason": "No fully sourced historical membership intervals"
+    },
+    {
+      "date": "2024-07-10",
+      "expected": 100,
+      "observed": 0,
+      "reason": "No fully sourced historical membership intervals"
+    },
+    {
+      "date": "2024-07-11",
+      "expected": 100,
+      "observed": 0,
+      "reason": "No fully sourced historical membership intervals"
+    },
+    {
+      "date": "2024-07-12",
+      "expected": 100,
+      "observed": 0,
+      "reason": "No fully sourced historical membership intervals"
+    },
+    {
+      "date": "2024-07-15",
+      "expected": 100,
+      "observed": 0,
+      "reason": "No fully sourced historical membership intervals"
+    },
+    {
+      "date": "2024-07-16",
+      "expected": 100,
+      "observed": 0,
+      "reason": "No fully sourced historical membership intervals"
+    },
+    {
+      "date": "2024-07-18",
+      "expected": 100,
+      "observed": 0,
+      "reason": "No fully sourced historical membership intervals"
+    },
+    {
+      "date": "2024-07-19",
+      "expected": 100,
+      "observed": 0,
+      "reason": "No fully sourced historical membership intervals"
+    },
+    {
+      "date": "2024-07-22",
+      "expected": 100,
+      "observed": 0,
+      "reason": "No fully sourced historical membership intervals"
+    }
+  ]
+}
