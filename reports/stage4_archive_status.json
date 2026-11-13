@@ -1,47 +1,43 @@
 {
-  "generated_utc": "2026-11-13T05:05:52.831188+00:00",
-  "requested_start": "2025-09-30",
+  "generated_utc": "2026-11-13T05:07:59.889834+00:00",
+  "requested_start": "2026-03-28",
   "requested_days": 180,
-  "new_sessions": 0,
-  "skipped_dates": 172,
+  "new_sessions": 121,
+  "skipped_dates": 52,
   "failures": [
     {
-      "date": "2025-10-02",
+      "date": "2026-03-31",
       "error": "HTTP Error 404: Not Found"
     },
     {
-      "date": "2025-10-22",
+      "date": "2026-04-03",
       "error": "HTTP Error 404: Not Found"
     },
     {
-      "date": "2025-11-05",
+      "date": "2026-04-14",
       "error": "HTTP Error 404: Not Found"
     },
     {
-      "date": "2025-12-25",
+      "date": "2026-05-01",
       "error": "HTTP Error 404: Not Found"
     },
     {
-      "date": "2026-01-15",
+      "date": "2026-05-28",
       "error": "HTTP Error 404: Not Found"
     },
     {
-      "date": "2026-01-26",
+      "date": "2026-06-26",
       "error": "HTTP Error 404: Not Found"
     },
     {
-      "date": "2026-03-03",
-      "error": "HTTP Error 404: Not Found"
-    },
-    {
-      "date": "2026-03-26",
+      "date": "2026-09-14",
       "error": "HTTP Error 404: Not Found"
     }
   ],
-  "archive_sessions": 427,
-  "archive_records": 40379,
+  "archive_sessions": 548,
+  "archive_records": 52419,
   "first_date": "2024-07-08",
-  "last_date": "2026-03-27",
+  "last_date": "2026-09-23",
   "current_universe_only": true,
   "corporate_action_adjusted": false,
   "historical_membership_verified": false,

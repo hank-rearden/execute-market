@@ -1,6 +1,6 @@
 {
-  "generated_utc": "2026-11-13T05:05:52.953436+00:00",
-  "flags_count": 16,
+  "generated_utc": "2026-11-13T05:08:00.037919+00:00",
+  "flags_count": 18,
   "flags": [
     {
       "symbol": "ADANIPOWER",
@@ -129,12 +129,30 @@
       "reason": "Large move; independently check split/bonus/demerger/symbol history"
     },
     {
+      "symbol": "TRENT",
+      "previous_date": "2026-06-03",
+      "date": "2026-06-04",
+      "previous_close": 4257.6,
+      "close": 2837.6,
+      "change_pct": -33.352,
+      "reason": "Large move; independently check split/bonus/demerger/symbol history"
+    },
+    {
       "symbol": "VBL",
       "previous_date": "2024-09-11",
       "date": "2024-09-12",
       "previous_close": 1569.15,
       "close": 645.6,
       "change_pct": -58.857,
+      "reason": "Large move; independently check split/bonus/demerger/symbol history"
+    },
+    {
+      "symbol": "VEDL",
+      "previous_date": "2026-04-29",
+      "date": "2026-04-30",
+      "previous_close": 773.6,
+      "close": 271.55,
+      "change_pct": -64.898,
       "reason": "Large move; independently check split/bonus/demerger/symbol history"
     },
     {
