@@ -6,6 +6,7 @@ on:
     paths:
       - 'index.html'
       - 'manifest.webmanifest'
+      - 'generate_pwa_icons.py'
       - 'reports/opportunities.json'
       - 'reports/opportunities.csv'
       - 'reports/screening.csv'
@@ -43,6 +44,7 @@ jobs:
           mkdir -p _site/reports
           cp index.html manifest.webmanifest _site/
           cp reports/opportunities.json reports/opportunities.csv reports/screening.csv _site/reports/
+          python generate_pwa_icons.py
           touch _site/.nojekyll
       - name: Configure Pages
         uses: actions/configure-pages@v5
