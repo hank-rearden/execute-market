@@ -1,0 +1,36 @@
+
+name: EXECUTE Market - Technical Screener
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  screen-stocks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Run technical screener
+        run: python screener.py
+
+      - name: Upload screening reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: execute-market-screening
+          path: |
+            reports/screening.csv
+            reports/screening.json
+          if-no-files-found: error
+          retention-days: 30
