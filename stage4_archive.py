@@ -71,11 +71,11 @@ def fetch_day(day,symbols):
 def main():
     p=argparse.ArgumentParser()
     p.add_argument("--start",default="2024-07-08")
-    p.add_argument("--days",type=int,default=45)
+    p.add_argument("--days",type=int,default=180)
     args=p.parse_args()
     start=date.fromisoformat(args.start)
     if start<START:raise SystemExit("Pre-UDiFF data needs separately verified legacy parser; no silent fallback")
-    if not 1<=args.days<=65:raise SystemExit("Use 1–65 calendar days per batch")
+    if not 1<=args.days<=180:raise SystemExit("Use 1–180 calendar days per batch")
     if start+timedelta(days=args.days)>datetime.now(timezone.utc).date()+timedelta(days=1):
         raise SystemExit("Cannot request future dates")
     symbols=universe()
