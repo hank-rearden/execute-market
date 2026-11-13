@@ -1,0 +1,61 @@
+{
+  "version": "3.0-paper",
+  "generated_utc": "2026-11-13T04:15:13.974534+00:00",
+  "first_session": "2025-09-22",
+  "last_session": "2026-11-12",
+  "sessions": 250,
+  "maximum_holding_sessions": 10,
+  "max_open_positions": 3,
+  "same_bar_policy": "Adverse stop assumed when entry and stop both touched; no entry-bar target credit",
+  "paper_only": true,
+  "strategies": {
+    "baseline": {
+      "starting_capital": 50000,
+      "ending_marked_equity": 45992.27,
+      "marked_return_pct": -8.015,
+      "realized_net_pnl": -3987.4,
+      "closed_trades": 14,
+      "win_rate_pct": 14.29,
+      "average_net_pnl_per_trade": -284.81,
+      "gross_profit": 714.24,
+      "gross_loss": -4701.64,
+      "profit_factor": 0.152,
+      "max_marked_drawdown_pct": 9.742,
+      "open_positions_at_end": 1,
+      "rejections": {
+        "not_triggered": 30,
+        "slots_full": 24,
+        "already_held": 7
+      }
+    },
+    "enhanced": {
+      "starting_capital": 50000,
+      "ending_marked_equity": 47226.53,
+      "marked_return_pct": -5.547,
+      "realized_net_pnl": -2588.81,
+      "closed_trades": 16,
+      "win_rate_pct": 18.75,
+      "average_net_pnl_per_trade": -161.8,
+      "gross_profit": 1806.84,
+      "gross_loss": -4395.65,
+      "profit_factor": 0.411,
+      "max_marked_drawdown_pct": 9.13,
+      "open_positions_at_end": 1,
+      "rejections": {
+        "not_triggered": 29,
+        "slots_full": 25,
+        "already_held": 6
+      }
+    }
+  },
+  "limitations": [
+    "Daily OHLC cannot establish intraday order; stop-first policy is conservative, not exact.",
+    "Only about 50 sessions remain after EMA200 warm-up; sample may contain few qualifying trades.",
+    "Current constituents introduce survivorship bias; prices are not verified corporate-action adjusted.",
+    "Slippage and fees are estimates; capital gains taxes excluded.",
+    "Stop gaps can exceed the intended \u20b9500 risk.",
+    "Open positions marked at last close without liquidation fees.",
+    "Both strategies use identical qualifying signals; enhanced score changes order only.",
+    "In-sample paper simulation, not proof of future profitability."
+  ]
+}
