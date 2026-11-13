@@ -35,7 +35,7 @@ def events():
         if not e["source_url"].startswith("https://"):raise RuntimeError("Invalid source URL")
         factor=float(e["price_divisor"])
         if not math.isfinite(factor) or factor<=0 or factor==1:raise RuntimeError("Invalid adjustment factor")
-        if e["action_type"].lower() not in ("split","bonus","consolidation"):
+        if e["action_type"].lower() not in ("split","bonus","consolidation","split_bonus"):
             raise RuntimeError("Complex actions need separately validated adjustment methodology")
         approved.append((e["symbol"],e["ex_date"],factor,e))
     if len({(s,d) for s,d,_,_ in approved})!=len(approved):
