@@ -1,0 +1,359 @@
+
+name: EXECUTE Market - Nifty 100 History
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  collect-history:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Collect Nifty 100 historical data
+        shell: bash
+        run: |
+          python - <<'PY'
+          import csv
+          import io
+          import json
+          import time
+          import urllib.request
+          import urllib.error
+          from datetime import datetime, timedelta
+          from pathlib import Path
+
+          BASE = "https://nsearchives.nseindia.com"
+          TARGET = 250
+          LOOKBACK_DAYS = 410
+          TODAY = datetime.now().date()
+
+          HEADERS = {
+              "User-Agent": "Mozilla/5.0",
+              "Accept": "text/csv,*/*",
+              "Referer": "https://www.nseindia.com/"
+          }
+
+          def download(url, retries=2):
+              for attempt in range(retries):
+                  try:
+                      request = urllib.request.Request(
+                          url, headers=HEADERS
+                      )
+                      with urllib.request.urlopen(
+                          request, timeout=18
+                      ) as response:
+                          return response.read().decode(
+                              "utf-8-sig"
+                          )
+                  except Exception:
+                      if attempt + 1 == retries:
+                          return None
+                      time.sleep(1 + attempt)
+
+          universe_urls = [
+              BASE + "/content/indices/ind_nifty100list.csv",
+              "https://www.niftyindices.com/IndexConstituent/ind_nifty100list.csv"
+          ]
+
+          symbols = None
+          source_url = None
+
+          for url in universe_urls:
+              content = download(url)
+              if not content:
+                  continue
+              try:
+                  reader = csv.DictReader(
+                      io.StringIO(content)
+                  )
+                  if "Symbol" not in (reader.fieldnames or []):
+                      continue
+                  values = [
+                      r["Symbol"].strip()
+                      for r in reader
+                  ]
+                  if len(values) == 100 and len(set(values)) == 100:
+                      symbols = values
+                      source_url = url
+                      break
+              except Exception:
+                  continue
+
+          if symbols is None:
+              raise SystemExit(
+                  "FAILED: Cannot validate Nifty 100 universe"
+              )
+
+          print("Universe validated:", len(symbols))
+          print("Source:", source_url, flush=True)
+
+          wanted = set(symbols)
+          records = {}
+          sessions = set()
+          failed_dates = []
+
+          Path("data").mkdir(exist_ok=True)
+
+          output = Path("data/nifty100_history.csv")
+
+          fields = [
+              "date", "symbol", "open", "high",
+              "low", "close", "volume"
+          ]
+
+          # Reuse an existing compatible history file.
+          if output.exists():
+              try:
+                  with output.open(
+                      newline="", encoding="utf-8"
+                  ) as file:
+                      reader = csv.DictReader(file)
+                      if not set(fields).issubset(
+                          reader.fieldnames or []
+                      ):
+                          raise ValueError("Incompatible CSV")
+                      for row in reader:
+                          if row["symbol"] in wanted:
+                              key = (row["date"], row["symbol"])
+                              records[key] = {
+                                  k: row[k] for k in fields
+                              }
+                              sessions.add(row["date"])
+                  print(
+                      "Reused records:", len(records),
+                      flush=True
+                  )
+              except Exception as exc:
+                  raise SystemExit(
+                      "Existing history invalid: " + str(exc)
+                  )
+
+          # Download recent dates first.
+          for offset in range(LOOKBACK_DAYS):
+              day = TODAY - timedelta(days=offset)
+
+              if day.weekday() >= 5:
+                  continue
+
+              date = day.isoformat()
+
+              # Avoid downloading sessions already present.
+              if date in sessions:
+                  continue
+
+              if len(sessions) >= TARGET:
+                  break
+
+              stamp = day.strftime("%Y%m%d")
+
+              url = (
+                  BASE +
+                  "/products/content/sec_bhavdata_full_"
+                  + stamp + ".csv"
+              )
+
+              # Prefer the newer UDiFF bhavcopy.
+              url = (
+                  BASE +
+                  "/products/content/sec_bhavdata_full_"
+                  + stamp + ".csv"
+              )
+
+              udiff_url = (
+                  BASE +
+                  "/products/content/"
+                  "BhavCopy_NSE_CM_0_0_0_"
+                  + stamp + "_F_0000.csv"
+              )
+
+              content = download(udiff_url)
+
+              if not content:
+                  failed_dates.append(date)
+                  continue
+
+              try:
+                  reader = csv.DictReader(
+                      io.StringIO(content)
+                  )
+
+                  required = {
+                      "Sgmt", "FinInstrmTp",
+                      "TckrSymb", "OpnPric",
+                      "HghPric", "LwPric",
+                      "ClsPric", "TtlTradgVol"
+                  }
+
+                  if not required.issubset(
+                      reader.fieldnames or []
+                  ):
+                      failed_dates.append(date)
+                      continue
+
+                  daily = {}
+
+                  for row in reader:
+                      symbol = row["TckrSymb"].strip()
+
+                      if symbol not in wanted:
+                          continue
+
+                      if row["Sgmt"].strip() != "CM":
+                          continue
+
+                      if row["FinInstrmTp"].strip() != "STK":
+                          continue
+
+                      try:
+                          op = float(row["OpnPric"])
+                          hi = float(row["HghPric"])
+                          lo = float(row["LwPric"])
+                          cl = float(row["ClsPric"])
+                          vol = int(float(row["TtlTradgVol"]))
+                      except (ValueError, TypeError):
+                          continue
+
+                      if not (
+                          lo > 0 and
+                          lo <= op <= hi and
+                          lo <= cl <= hi and
+                          vol >= 0
+                      ):
+                          continue
+
+                      if symbol in daily:
+                          raise ValueError(
+                              "Duplicate equity symbol: "
+                              + symbol + " on " + date
+                          )
+
+                      daily[symbol] = {
+                          "date": date,
+                          "symbol": symbol,
+                          "open": op,
+                          "high": hi,
+                          "low": lo,
+                          "close": cl,
+                          "volume": vol
+                      }
+
+                  if len(daily) < 80:
+                      print(
+                          "Insufficient coverage:",
+                          date, len(daily),
+                          flush=True
+                      )
+                      failed_dates.append(date)
+                      continue
+
+                  for symbol, row in daily.items():
+                      records[(date, symbol)] = row
+
+                  sessions.add(date)
+
+                  if len(sessions) % 25 == 0:
+                      print(
+                          "Sessions:", len(sessions),
+                          "Records:", len(records),
+                          flush=True
+                      )
+
+              except Exception as exc:
+                  print(
+                      "Invalid session:", date,
+                      str(exc), flush=True
+                  )
+                  failed_dates.append(date)
+
+          # Retain only the latest 250 sessions.
+          selected = sorted(sessions, reverse=True)[:TARGET]
+          selected_set = set(selected)
+
+          rows = [
+              row for (date, symbol), row
+              in records.items()
+              if date in selected_set
+          ]
+
+          rows.sort(
+              key=lambda r: (r["date"], r["symbol"])
+          )
+
+          with output.open(
+              "w", newline="", encoding="utf-8"
+          ) as file:
+              writer = csv.DictWriter(
+                  file, fieldnames=fields
+              )
+              writer.writeheader()
+              writer.writerows(rows)
+
+          coverage = {
+              symbol: sum(
+                  1 for row in rows
+                  if row["symbol"] == symbol
+              )
+              for symbol in symbols
+          }
+
+          missing = [
+              s for s, count in coverage.items()
+              if count < 200
+          ]
+
+          report = {
+              "generated_utc": datetime.now().isoformat(),
+              "universe_source": source_url,
+              "universe_size": len(symbols),
+              "sessions": len(selected),
+              "records": len(rows),
+              "latest_date": selected[0] if selected else None,
+              "earliest_date": selected[-1] if selected else None,
+              "symbols_below_200_sessions": missing,
+              "unavailable_dates": failed_dates,
+              "corporate_action_adjusted": False,
+              "paper_trading_only": True
+          }
+
+          Path("data/history100_report.json").write_text(
+              json.dumps(report, indent=2)
+          )
+
+          print(json.dumps(report, indent=2), flush=True)
+
+          if len(selected) < TARGET:
+              raise SystemExit(
+                  "FAILED: Fewer than 250 sessions collected"
+              )
+
+          if missing:
+              print(
+                  "WARNING: Some symbols have fewer than "
+                  "200 sessions. Review before screening."
+              )
+
+          print("HISTORY COLLECTION PASSED")
+          PY
+
+      - name: Upload historical data
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: execute-nifty100-history
+          path: |
+            data/nifty100_history.csv
+            data/history100_report.json
+          if-no-files-found: warn
+          retention-days: 30
