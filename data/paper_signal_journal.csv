@@ -1,0 +1,2 @@
+signal_date,symbol,setup,baseline_status,enhanced_score,entry_trigger,stop,target,quantity,estimated_net_risk,estimated_net_rr,signal_generated_utc,execution_status,notes
+2026-11-12,ZYDUSLIFE,PULLBACK,WATCHLIST ONLY - UNCONFIRMED,95,1210.41,1143.48,1377.74,6,446.77,2.14,2026-11-13T05:52:03.369635+00:00,NOT_EXECUTED_UNCONFIRMED,Prospective signal only; no order or fill inferred
