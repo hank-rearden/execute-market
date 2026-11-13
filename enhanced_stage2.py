@@ -14,7 +14,7 @@ MIN_SESSIONS = 201
 def mean(xs):
     return sum(xs) / len(xs) if xs else 0.0
 
-def rank_stock(symbol, rows, baseline):
+def rank_stock(symbol, rows, baseline, asof_date=None):
     rows.sort(key=lambda r: r["date"])
     n = len(rows)
     result = {
@@ -30,7 +30,7 @@ def rank_stock(symbol, rows, baseline):
     if n < MIN_SESSIONS:
         result["cautions"].append("Requires at least 201 sessions")
         return result
-    age = (datetime.now(timezone.utc).date() - date.fromisoformat(rows[-1]["date"])).days
+    age = ((asof_date or datetime.now(timezone.utc).date()) - date.fromisoformat(rows[-1]["date"])).days
     if age < 0 or age > 5 or baseline.get("status") == "STALE DATA":
         result["enhanced_status"] = "STALE DATA"
         result["cautions"].append("Historical data outside five-day freshness window")
