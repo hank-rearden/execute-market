@@ -240,7 +240,8 @@ jobs:
                       "Sgmt", "FinInstrmTp",
                       "TckrSymb", "OpnPric",
                       "HghPric", "LwPric",
-                      "ClsPric", "TtlTradgVol"
+                      "ClsPric", "TtlTradgVol",
+                      "SctySrs"
                   }
 
                   if not required.issubset(
@@ -262,6 +263,10 @@ jobs:
                           continue
 
                       if row["FinInstrmTp"].strip() != "STK":
+                          continue
+
+                      # Select ordinary EQ-series shares only.
+                      if row["SctySrs"].strip() != "EQ":
                           continue
 
                       try:
