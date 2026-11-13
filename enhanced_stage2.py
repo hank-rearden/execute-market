@@ -4,7 +4,7 @@ import csv
 import json
 import math
 from collections import defaultdict
-from datetime import date
+from datetime import date, datetime, timezone
 from pathlib import Path
 
 DATA = Path("data/nifty100_history.csv")
@@ -29,6 +29,11 @@ def rank_stock(symbol, rows, baseline):
     }
     if n < MIN_SESSIONS:
         result["cautions"].append("Requires at least 201 sessions")
+        return result
+    age = (datetime.now(timezone.utc).date() - date.fromisoformat(rows[-1]["date"])).days
+    if age < 0 or age > 5 or baseline.get("status") == "STALE DATA":
+        result["enhanced_status"] = "STALE DATA"
+        result["cautions"].append("Historical data outside five-day freshness window")
         return result
     close = rows[-1]["close"]
     closes = [r["close"] for r in rows]
@@ -142,7 +147,17 @@ def main():
         baseline = json.load(f)
     if not baseline.get("paper_only") or len(baseline["results"]) != 100 or len(history) != 100:
         raise SystemExit("Expected 100 paper-only baseline results and 100 history symbols")
-    indexed = {r["symbol"]: r for r in baseline["results"]}
+    indexed = {r["symbol"]: dict(r) for r in baseline["results"]}
+    for r in indexed.values():
+        status = r["status"]
+        r["category"] = ("QUALIFIED" if status == "WATCHLIST ONLY - UNCONFIRMED"
+            else "EXCLUDED" if status in ("STALE DATA", "INSUFFICIENT HISTORY")
+            else "NEAR-QUALIFIED" if r["setup"] != "NO SETUP"
+            else "EMERGING" if (r["sessions"] >= 201
+                and all(r.get(k) is not None for k in ("ema20", "ema50", "ema200", "rsi14"))
+                and r["close"] > r["ema20"] > r["ema50"] > r["ema200"]
+                and 45 <= r["rsi14"] <= 75)
+            else "NO SETUP")
     if set(indexed) != set(history):
         raise SystemExit("Baseline/history universe mismatch")
     result = [rank_stock(symbol, history[symbol], indexed[symbol]) for symbol in sorted(history)]
