@@ -1,6 +1,6 @@
 
 #!/usr/bin/env python3
-"""EXECUTE Market Phase 3: NSE swing screener. Paper trading only."""
+"""EXECUTE Market Phase 3B — paper trading only."""
 
 import csv
 import json
@@ -11,356 +11,344 @@ from pathlib import Path
 
 INPUT = Path("data/nse_history.csv")
 OUTPUT = Path("reports")
-
-CAPITAL = 50000
-RISK_PER_TRADE = 500
-MAX_POSITION_VALUE = 20000
-MAX_DATA_AGE_DAYS = 7
-
 SYMBOLS = ("DLF", "HDFCLIFE", "TMCV")
 
+CAPITAL = 50000
+MAX_RISK = 500
+MAX_POSITION = 20000
+MAX_STOP_PERCENT = 8
+MIN_NET_RR = 1.8
+MAX_AGE_DAYS = 5
 
-def ema(values, period):
-    if len(values) < period:
+# Illustrative NSE equity-delivery charges.
+# Verify against current Zerodha contract notes.
+STT = 0.001
+STAMP_BUY = 0.00015
+EXCHANGE = 0.0000297
+SEBI = 0.000001
+GST = 0.18
+DP_SELL = 15.34
+BROKERAGE = 0
+SLIPPAGE_RATE = 0.001
+
+
+def ema(values, n):
+    if len(values) < n:
         return None
-
-    result = sum(values[:period]) / period
-    multiplier = 2 / (period + 1)
-
-    for value in values[period:]:
-        result = value * multiplier + result * (1 - multiplier)
-
+    result = sum(values[:n]) / n
+    k = 2 / (n + 1)
+    for value in values[n:]:
+        result = value * k + result * (1 - k)
     return result
 
 
-def rsi(values, period=14):
-    if len(values) <= period:
+def rsi(values, n=14):
+    if len(values) <= n:
         return None
-
     changes = [
         values[i] - values[i - 1]
         for i in range(1, len(values))
     ]
-
-    gain = sum(max(x, 0) for x in changes[:period]) / period
-    loss = sum(max(-x, 0) for x in changes[:period]) / period
-
-    for change in changes[period:]:
-        gain = (gain * (period - 1) + max(change, 0)) / period
-        loss = (loss * (period - 1) + max(-change, 0)) / period
-
+    gain = sum(max(x, 0) for x in changes[:n]) / n
+    loss = sum(max(-x, 0) for x in changes[:n]) / n
+    for change in changes[n:]:
+        gain = (gain * (n - 1) + max(change, 0)) / n
+        loss = (loss * (n - 1) + max(-change, 0)) / n
     if loss == 0:
-        return 100.0 if gain > 0 else 50.0
-
+        return 100 if gain > 0 else 50
     return 100 - 100 / (1 + gain / loss)
 
 
-def atr(rows, period=14):
-    if len(rows) <= period:
+def atr(rows, n=14):
+    if len(rows) <= n:
         return None
-
-    true_ranges = []
-
+    ranges = []
     for i in range(1, len(rows)):
-        current = rows[i]
-        previous = rows[i - 1]
-
-        high = current["high"]
-        low = current["low"]
-        previous_close = previous["close"]
-
-        tr = max(
-            high - low,
-            abs(high - previous_close),
-            abs(low - previous_close)
-        )
-
-        true_ranges.append(tr)
-
-    result = sum(true_ranges[:period]) / period
-
-    for tr in true_ranges[period:]:
-        result = (
-            result * (period - 1) + tr
-        ) / period
-
+        row = rows[i]
+        prev = rows[i - 1]["close"]
+        ranges.append(max(
+            row["high"] - row["low"],
+            abs(row["high"] - prev),
+            abs(row["low"] - prev)
+        ))
+    result = sum(ranges[:n]) / n
+    for value in ranges[n:]:
+        result = (result * (n - 1) + value) / n
     return result
 
 
-def read_data():
-    if not INPUT.exists():
-        raise SystemExit(
-            "Missing data/nse_history.csv"
-        )
+def charges(buy, sell, qty):
+    """Estimated complete NSE delivery round trip."""
+    buy_value = buy * qty
+    sell_value = sell * qty
+    turnover = buy_value + sell_value
 
-    by_symbol = defaultdict(list)
+    stt = turnover * STT
+    stamp = buy_value * STAMP_BUY
+    exchange = turnover * EXCHANGE
+    sebi = turnover * SEBI
+    gst = (exchange + sebi + BROKERAGE) * GST
+
+    return (
+        stt + stamp + exchange + sebi
+        + gst + DP_SELL + BROKERAGE
+    )
+
+
+def trade_metrics(entry, stop, target, qty):
+    if qty <= 0:
+        return None
+
+    buy_fill = entry * (1 + SLIPPAGE_RATE)
+    stop_fill = stop * (1 - SLIPPAGE_RATE)
+    target_fill = target * (1 - SLIPPAGE_RATE)
+
+    stop_cost = charges(buy_fill, stop_fill, qty)
+    target_cost = charges(buy_fill, target_fill, qty)
+
+    net_loss = (
+        (buy_fill - stop_fill) * qty + stop_cost
+    )
+    net_profit = (
+        (target_fill - buy_fill) * qty - target_cost
+    )
+
+    return {
+        "quantity": qty,
+        "position_value": round(entry * qty, 2),
+        "estimated_stop_cost": round(stop_cost, 2),
+        "estimated_target_cost": round(target_cost, 2),
+        "net_risk": round(net_loss, 2),
+        "net_profit": round(net_profit, 2),
+        "net_rr": round(
+            net_profit / net_loss, 2
+        ) if net_loss > 0 else 0
+    }
+
+
+def load_data():
+    data = defaultdict(list)
     seen = set()
 
-    required = {
-        "date", "symbol", "series",
-        "open", "high", "low",
-        "close", "volume"
-    }
+    if not INPUT.exists():
+        raise SystemExit("Historical CSV not found")
 
     with INPUT.open(
         newline="", encoding="utf-8-sig"
-    ) as file:
-
-        reader = csv.DictReader(file)
-
+    ) as f:
+        reader = csv.DictReader(f)
+        required = {
+            "date", "symbol", "series", "open",
+            "high", "low", "close", "volume"
+        }
         if not required.issubset(reader.fieldnames or []):
-            raise SystemExit("Missing required CSV columns")
+            raise SystemExit("Invalid CSV columns")
 
         for raw in reader:
             symbol = raw["symbol"].strip()
-
             if symbol not in SYMBOLS:
                 continue
 
-            trading_date = date.fromisoformat(raw["date"])
-            key = (trading_date, symbol)
-
+            d = date.fromisoformat(raw["date"])
+            key = (symbol, d)
             if key in seen:
-                raise SystemExit(
-                    f"Duplicate record: {key}"
-                )
-
+                raise SystemExit(f"Duplicate: {key}")
             seen.add(key)
 
             series = raw["series"].strip()
-
             if series not in ("EQ", "BE"):
-                raise SystemExit(
-                    f"Unexpected trading series: {key}"
-                )
-
+                raise SystemExit(f"Invalid series: {key}")
             if series == "BE" and symbol != "TMCV":
-                raise SystemExit(
-                    f"Unexpected BE series: {key}"
-                )
+                raise SystemExit(f"Unexpected BE: {key}")
 
             row = {
-                "date": trading_date,
-                "symbol": symbol,
-                "series": series
+                "date": d,
+                "series": series,
+                "volume": int(raw["volume"])
             }
-
-            for field in (
-                "open", "high", "low", "close"
-            ):
-                row[field] = float(raw[field])
-
-            row["volume"] = int(raw["volume"])
+            for col in ("open", "high", "low", "close"):
+                row[col] = float(raw[col])
 
             prices = [
-                row["open"],
-                row["high"],
-                row["low"],
-                row["close"]
+                row[x] for x in
+                ("open", "high", "low", "close")
             ]
-
             if (
-                not all(
-                    math.isfinite(p) and p > 0
-                    for p in prices
-                )
+                not all(math.isfinite(x) and x > 0
+                        for x in prices)
                 or row["low"] > min(prices)
                 or row["high"] < max(prices)
                 or row["volume"] < 0
             ):
-                raise SystemExit(
-                    f"Invalid OHLCV: {key}"
-                )
+                raise SystemExit(f"Bad OHLCV: {key}")
 
-            by_symbol[symbol].append(row)
+            data[symbol].append(row)
 
     for symbol in SYMBOLS:
-        by_symbol[symbol].sort(
-            key=lambda x: x["date"]
-        )
+        if not data[symbol]:
+            raise SystemExit(f"Missing: {symbol}")
+        data[symbol].sort(key=lambda x: x["date"])
 
-        if not by_symbol[symbol]:
-            raise SystemExit(
-                f"No data available for {symbol}"
-            )
-
-    return by_symbol
+    return data
 
 
 def analyze(symbol, rows, today):
     last = rows[-1]
+    close = last["close"]
+    closes = [x["close"] for x in rows]
 
-    closes = [
-        row["close"] for row in rows
-    ]
-
-    ema20 = ema(closes, 20)
-    ema50 = ema(closes, 50)
-    ema200 = ema(closes, 200)
-
-    momentum = rsi(closes, 14)
-    volatility = atr(rows, 14)
+    e20 = ema(closes, 20)
+    e50 = ema(closes, 50)
+    e200 = ema(closes, 200)
+    momentum = rsi(closes)
+    volatility = atr(rows)
 
     age = (today - last["date"]).days
-
     if age < 0:
-        raise SystemExit(
-            "Future data date detected"
-        )
+        raise SystemExit("Future-dated data")
 
-    fresh = age <= MAX_DATA_AGE_DAYS
+    fresh = age <= MAX_AGE_DAYS
+    enough = len(rows) >= 201
 
-    sufficient_history = (
-        len(rows) >= 201
-        and all(
-            x is not None
-            for x in (
-                ema20, ema50, ema200,
-                momentum, volatility
-            )
-        )
+    trend = bool(
+        enough and close > e20 > e50 > e200
     )
 
-    trend_up = bool(
-        sufficient_history
-        and last["close"] > ema20 > ema50 > ema200
-    )
+    setup = "NO SETUP"
+    score = 0
 
-    avg_volume = None
-    prior_high = None
+    if trend:
+        score += 30
 
-    if len(rows) >= 21:
+    if len(rows) >= 21 and enough:
         previous = rows[-21:-1]
-
+        prior_high = max(x["high"] for x in previous)
         avg_volume = sum(
-            row["volume"] for row in previous
+            x["volume"] for x in previous
         ) / 20
 
-        prior_high = max(
-            row["high"] for row in previous
+        breakout = (
+            trend
+            and close > prior_high
+            and last["volume"] >= 1.5 * avg_volume
+            and momentum < 80
         )
 
-    breakout = bool(
-        trend_up
-        and prior_high is not None
-        and last["close"] > prior_high
-        and avg_volume is not None
-        and avg_volume > 0
-        and last["volume"] >= 1.5 * avg_volume
-        and momentum < 80
-    )
-
-    pullback = bool(
-        trend_up
-        and abs(last["close"] / ema20 - 1) <= 0.025
-        and 45 <= momentum <= 70
-        and last["close"] > last["open"]
-    )
-
-    if breakout:
-        setup = "BREAKOUT"
-    elif pullback:
-        setup = "PULLBACK"
-    else:
-        setup = "NO SETUP"
-
-    entry = None
-    stop = None
-    target = None
-    quantity = None
-    planned_risk = None
-    position_value = None
-
-    if setup != "NO SETUP" and volatility:
-        entry = round(
-            last["high"] * 1.001, 2
+        pullback = (
+            trend
+            and abs(close / e20 - 1) <= 0.025
+            and 45 <= momentum <= 70
+            and close > last["open"]
         )
 
-        stop = round(
-            min(last["low"], ema20)
-            - 0.5 * volatility, 2
-        )
+        if breakout:
+            setup = "BREAKOUT"
+            score += 35
+        elif pullback:
+            setup = "PULLBACK"
+            score += 25
 
-        if 0 < stop < entry:
-            unit_risk = entry - stop
+    if momentum is not None and 50 <= momentum <= 70:
+        score += 10
 
-            quantity = min(
-                int(RISK_PER_TRADE / unit_risk),
-                int(MAX_POSITION_VALUE / entry),
-                int(CAPITAL / entry)
-            )
-
-            if quantity >= 1:
-                target = round(
-                    entry + 2 * unit_risk, 2
-                )
-
-                planned_risk = round(
-                    quantity * unit_risk, 2
-                )
-
-                position_value = round(
-                    quantity * entry, 2
-                )
-            else:
-                quantity = 0
-
-    score = (
-        int(trend_up) * 30
-        + int(breakout) * 35
-        + int(pullback) * 25
-        + (
-            10 if momentum is not None
-            and 50 <= momentum <= 70
-            else 0
-        )
-    )
-
-    if not fresh:
-        status = "STALE DATA"
-    elif not sufficient_history:
-        status = "INSUFFICIENT HISTORY"
-    elif setup != "NO SETUP":
-        status = "UNCONFIRMED - EOD / UNADJUSTED"
-    else:
-        status = "NO CONFIRMED SIGNAL"
-
-    return {
+    result = {
         "symbol": symbol,
         "data_date": last["date"].isoformat(),
         "sessions": len(rows),
-        "close": round(last["close"], 2),
-        "ema20": round(ema20, 2) if ema20 is not None else None,
-        "ema50": round(ema50, 2) if ema50 is not None else None,
-        "ema200": round(ema200, 2) if ema200 is not None else None,
+        "close": round(close, 2),
+        "ema20": round(e20, 2) if e20 else None,
+        "ema50": round(e50, 2) if e50 else None,
+        "ema200": round(e200, 2) if e200 else None,
         "rsi14": round(momentum, 2) if momentum is not None else None,
-        "atr14": round(volatility, 2) if volatility is not None else None,
-        "volume": last["volume"],
-        "avg_volume20": round(avg_volume) if avg_volume is not None else None,
-        "trend_up": trend_up,
+        "atr14": round(volatility, 2) if volatility else None,
         "setup": setup,
         "score": score,
-        "entry_trigger": entry,
-        "stop": stop,
-        "target_2r": target,
-        "quantity": quantity,
-        "planned_risk_inr": planned_risk,
-        "position_value_inr": position_value,
-        "fresh": fresh,
-        "history_sufficient": sufficient_history,
-        "status": status,
-        "notes": (
-            "Paper research only. "
-            "Corporate actions unverified. "
-            "Charges, taxes and slippage excluded."
-        )
+        "entry": None,
+        "stop": None,
+        "target": None,
+        "quantity": 0,
+        "position_value": None,
+        "net_risk": None,
+        "net_profit": None,
+        "net_rr": None,
+        "status": "NO SETUP"
     }
+
+    if not fresh:
+        result["status"] = "STALE DATA"
+        return result
+
+    if not enough:
+        result["status"] = "INSUFFICIENT HISTORY"
+        return result
+
+    if setup == "NO SETUP":
+        return result
+
+    # Entry above signal candle.
+    entry = round(last["high"] * 1.001, 2)
+
+    # Candidate stop using ATR and recent support.
+    atr_stop = entry - 2 * volatility
+    support = min(x["low"] for x in rows[-10:])
+    support_stop = support - 0.25 * volatility
+
+    # Choose the more conservative (lower) stop.
+    stop = round(min(atr_stop, support_stop), 2)
+
+    if stop <= 0 or stop >= entry:
+        result["status"] = "INVALID STOP"
+        return result
+
+    stop_pct = (entry - stop) / entry * 100
+
+    result["entry"] = entry
+    result["stop"] = stop
+
+    if stop_pct > MAX_STOP_PERCENT:
+        result["status"] = "REJECTED - WIDE STOP"
+        return result
+
+    unit_risk = entry - stop
+    target = round(entry + 2.5 * unit_risk, 2)
+    result["target"] = target
+
+    max_qty = min(
+        int(MAX_POSITION / entry),
+        int(CAPITAL / entry),
+        int(MAX_RISK / unit_risk)
+    )
+
+    chosen = None
+
+    # Include estimated costs and slippage in risk.
+    for qty in range(max_qty, 0, -1):
+        metrics = trade_metrics(
+            entry, stop, target, qty
+        )
+        if metrics["net_risk"] <= MAX_RISK:
+            chosen = metrics
+            break
+
+    if chosen is None:
+        result["status"] = "REJECTED - RISK LIMIT"
+        return result
+
+    result.update(chosen)
+
+    if chosen["net_rr"] < MIN_NET_RR:
+        result["status"] = "REJECTED - LOW NET RR"
+    else:
+        result["status"] = (
+            "WATCHLIST ONLY - UNCONFIRMED"
+        )
+
+    return result
 
 
 def main():
-    data = read_data()
-
     today = datetime.now(timezone.utc).date()
+    data = load_data()
 
     results = [
         analyze(symbol, data[symbol], today)
@@ -368,62 +356,55 @@ def main():
     ]
 
     results.sort(
-        key=lambda r: (-r["score"], r["symbol"])
+        key=lambda x: (-x["score"], x["symbol"])
     )
 
-    OUTPUT.mkdir(
-        parents=True, exist_ok=True
-    )
+    OUTPUT.mkdir(parents=True, exist_ok=True)
 
     report = {
+        "version": "3B",
         "generated_utc": datetime.now(
             timezone.utc
         ).isoformat(),
-        "capital_inr": CAPITAL,
-        "max_risk_per_trade_inr": RISK_PER_TRADE,
-        "max_position_value_inr": MAX_POSITION_VALUE,
-        "results": results,
-        "disclaimer": (
-            "Unadjusted NSE historical data. "
-            "Signals are unconfirmed. "
-            "Paper trading only."
-        )
+        "capital": CAPITAL,
+        "risk_limit": MAX_RISK,
+        "paper_only": True,
+        "corporate_actions_verified": False,
+        "charges_verified": False,
+        "signals_confirmed": False,
+        "notes": (
+            "All candidates require independent "
+            "corporate-action and signal validation. "
+            "Charges and slippage are estimates. "
+            "Taxes on capital gains are excluded. "
+            "Stops cannot guarantee maximum losses."
+        ),
+        "results": results
     }
 
-    with (
-        OUTPUT / "screening.json"
-    ).open("w", encoding="utf-8") as file:
-        json.dump(
-            report, file, indent=2
-        )
+    with (OUTPUT / "screening.json").open(
+        "w", encoding="utf-8"
+    ) as f:
+        json.dump(report, f, indent=2)
 
-    with (
-        OUTPUT / "screening.csv"
-    ).open(
+    with (OUTPUT / "screening.csv").open(
         "w", newline="", encoding="utf-8"
-    ) as file:
-
+    ) as f:
         writer = csv.DictWriter(
-            file,
-            fieldnames=list(results[0].keys())
+            f, fieldnames=list(results[0].keys())
         )
-
         writer.writeheader()
         writer.writerows(results)
 
-    print("EXECUTE MARKET - PHASE 3")
+    print("EXECUTE MARKET PHASE 3B")
     print("PAPER TRADING ONLY")
-
-    for result in results:
+    for r in results:
         print(
-            result["symbol"],
-            "Close:", result["close"],
-            "RSI:", result["rsi14"],
-            "ATR:", result["atr14"],
-            "Setup:", result["setup"],
-            "Status:", result["status"]
+            r["symbol"],
+            "|", r["setup"],
+            "|", r["status"],
+            "| Net R:R", r["net_rr"]
         )
-
     print("Reports generated successfully")
 
 
