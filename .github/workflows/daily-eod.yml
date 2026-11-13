@@ -34,6 +34,8 @@ jobs:
         run: python rank_opportunities.py
       - name: Run enhanced Stage 2
         run: python enhanced_stage2.py
+      - name: Record prospective paper signals without simulated fills
+        run: python forward_paper_journal.py
       - name: Validate reports and historical data
         run: |
           python - <<'PY'
@@ -64,6 +66,7 @@ jobs:
             reports/opportunities.json
             reports/enhanced_stage2.csv
             reports/enhanced_stage2.json
+            data/paper_signal_journal.csv
           retention-days: 30
       - name: Commit validated data and reports
         shell: bash
@@ -71,7 +74,7 @@ jobs:
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/nifty100_history.csv data/history100_report.json reports/screening.csv reports/screening.json reports/opportunities.csv reports/opportunities.json reports/enhanced_stage2.csv reports/enhanced_stage2.json
+          git add data/paper_signal_journal.csv data/nifty100_history.csv data/history100_report.json reports/screening.csv reports/screening.json reports/opportunities.csv reports/opportunities.json reports/enhanced_stage2.csv reports/enhanced_stage2.json
           if git diff --cached --quiet; then
             echo "No changes to publish"
             exit 0
