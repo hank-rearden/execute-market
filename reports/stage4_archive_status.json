@@ -1,9 +1,9 @@
 {
-  "generated_utc": "2026-11-13T05:04:42.841799+00:00",
+  "generated_utc": "2026-11-13T05:05:52.831188+00:00",
   "requested_start": "2025-09-30",
   "requested_days": 180,
-  "new_sessions": 121,
-  "skipped_dates": 51,
+  "new_sessions": 0,
+  "skipped_dates": 172,
   "failures": [
     {
       "date": "2025-10-02",
