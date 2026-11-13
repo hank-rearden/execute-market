@@ -1,10 +1,10 @@
 {
-  "generated_utc": "2026-11-13T05:20:00.401088+00:00",
+  "generated_utc": "2026-11-13T05:23:40.575394+00:00",
   "raw_rows": 55719,
   "adjusted_rows": 55719,
   "flags": 18,
-  "approved_events": 0,
-  "unverified_flags": 18,
+  "approved_events": 3,
+  "unverified_flags": 15,
   "raw_archive_unchanged": true,
   "fully_corporate_action_verified": false,
   "historical_membership_verified": false,
