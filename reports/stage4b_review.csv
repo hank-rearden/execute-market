@@ -1,10 +1,10 @@
 symbol,event_date,previous_date,previous_close,close,change_pct,status,source
 ADANIPOWER,2025-09-22,2025-09-19,709.4,170.25,-76.001,UNVERIFIED_REQUIRES_NSE_EVIDENCE,NSE corporate filings: https://www.nseindia.com/companies-listing/corporate-filings-actions
-BAJFINANCE,2025-06-16,2025-06-13,9331.0,938.0,-89.947,UNVERIFIED_REQUIRES_NSE_EVIDENCE,NSE corporate filings: https://www.nseindia.com/companies-listing/corporate-filings-actions
-BSE,2025-05-23,2025-05-22,6996.5,2448.0,-65.011,UNVERIFIED_REQUIRES_NSE_EVIDENCE,NSE corporate filings: https://www.nseindia.com/companies-listing/corporate-filings-actions
+BAJFINANCE,2025-06-16,2025-06-13,9331.0,938.0,-89.947,APPROVED_LEDGER_EVENT,NSE corporate filings: https://www.nseindia.com/companies-listing/corporate-filings-actions
+BSE,2025-05-23,2025-05-22,6996.5,2448.0,-65.011,APPROVED_LEDGER_EVENT,NSE corporate filings: https://www.nseindia.com/companies-listing/corporate-filings-actions
 DRREDDY,2024-10-28,2024-10-25,6514.7,1311.5,-79.869,APPROVED_LEDGER_EVENT,NSE corporate filings: https://www.nseindia.com/companies-listing/corporate-filings-actions
-HDFCAMC,2025-11-26,2025-11-25,5336.5,2679.0,-49.799,UNVERIFIED_REQUIRES_NSE_EVIDENCE,NSE corporate filings: https://www.nseindia.com/companies-listing/corporate-filings-actions
-HDFCBANK,2025-08-26,2025-08-25,1964.1,973.4,-50.44,UNVERIFIED_REQUIRES_NSE_EVIDENCE,NSE corporate filings: https://www.nseindia.com/companies-listing/corporate-filings-actions
+HDFCAMC,2025-11-26,2025-11-25,5336.5,2679.0,-49.799,APPROVED_LEDGER_EVENT,NSE corporate filings: https://www.nseindia.com/companies-listing/corporate-filings-actions
+HDFCBANK,2025-08-26,2025-08-25,1964.1,973.4,-50.44,APPROVED_LEDGER_EVENT,NSE corporate filings: https://www.nseindia.com/companies-listing/corporate-filings-actions
 KOTAKBANK,2026-01-14,2026-01-13,2132.6,421.0,-80.259,UNVERIFIED_REQUIRES_NSE_EVIDENCE,NSE corporate filings: https://www.nseindia.com/companies-listing/corporate-filings-actions
 MAZDOCK,2024-12-27,2024-12-26,4729.75,2317.4,-51.004,UNVERIFIED_REQUIRES_NSE_EVIDENCE,NSE corporate filings: https://www.nseindia.com/companies-listing/corporate-filings-actions
 MOTHERSON,2025-07-18,2025-07-17,153.87,100.97,-34.38,UNVERIFIED_REQUIRES_NSE_EVIDENCE,NSE corporate filings: https://www.nseindia.com/companies-listing/corporate-filings-actions
