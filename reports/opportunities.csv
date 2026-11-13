@@ -1,0 +1,16 @@
+symbol,data_date,sessions,close,ema20,ema50,ema200,rsi14,atr14,setup,score,entry,stop,target,quantity,position_value,net_risk,net_profit,net_rr,status,category,reason,estimated_stop_cost,estimated_target_cost
+ZYDUSLIFE,2026-11-12,250,1206.0,1185.74,1163.38,1058.82,56.85,33.46,PULLBACK,65,1210.41,1143.48,1377.74,6,7262.46,446.77,955.93,2.14,WATCHLIST ONLY - UNCONFIRMED,QUALIFIED,All model filters passed; unconfirmed signal,31.07,32.52
+DLF,2026-11-12,250,769.3,708.94,683.95,655.66,74.65,19.01,BREAKOUT,65,771.22,660.25,,0,,,,,REJECTED - WIDE STOP,NEAR-QUALIFIED,REJECTED - WIDE STOP,,
+ADANIGREEN,2026-11-12,250,1422.0,1347.55,1326.06,1224.79,62.1,44.56,NO SETUP,40,,,,0,,,,,NO SETUP,EMERGING,Strong EMA trend and moderate RSI; no setup trigger,,
+ADANIPORTS,2026-11-12,250,1930.0,1847.28,1796.93,1670.69,64.1,51.65,NO SETUP,40,,,,0,,,,,NO SETUP,EMERGING,Strong EMA trend and moderate RSI; no setup trigger,,
+BHARTIARTL,2026-11-12,250,2096.0,1992.51,1926.04,1920.4,68.88,46.0,NO SETUP,40,,,,0,,,,,NO SETUP,EMERGING,Strong EMA trend and moderate RSI; no setup trigger,,
+BOSCHLTD,2026-11-12,250,50500.0,48327.72,46911.24,41532.7,62.2,1347.75,NO SETUP,40,,,,0,,,,,NO SETUP,EMERGING,Strong EMA trend and moderate RSI; no setup trigger,,
+ETERNAL,2026-11-12,250,364.35,343.26,330.44,298.02,68.49,10.02,NO SETUP,40,,,,0,,,,,NO SETUP,EMERGING,Strong EMA trend and moderate RSI; no setup trigger,,
+GAIL,2026-11-12,250,187.91,177.86,174.15,169.63,69.9,4.19,NO SETUP,40,,,,0,,,,,NO SETUP,EMERGING,Strong EMA trend and moderate RSI; no setup trigger,,
+JSWSTEEL,2026-11-12,250,1352.1,1294.83,1273.73,1239.26,65.88,31.11,NO SETUP,40,,,,0,,,,,NO SETUP,EMERGING,Strong EMA trend and moderate RSI; no setup trigger,,
+MOTHERSON,2026-11-12,250,165.83,160.99,159.63,141.8,55.86,5.77,NO SETUP,40,,,,0,,,,,NO SETUP,EMERGING,Strong EMA trend and moderate RSI; no setup trigger,,
+TECHM,2026-11-12,250,1774.0,1754.72,1677.02,1562.84,57.48,48.31,NO SETUP,40,,,,0,,,,,NO SETUP,EMERGING,Strong EMA trend and moderate RSI; no setup trigger,,
+TITAN,2026-11-12,250,4921.9,4676.79,4671.21,4425.89,66.86,119.1,NO SETUP,40,,,,0,,,,,NO SETUP,EMERGING,Strong EMA trend and moderate RSI; no setup trigger,,
+TVSMOTOR,2026-11-12,250,4500.0,4280.45,4169.29,3869.19,68.6,117.36,NO SETUP,40,,,,0,,,,,NO SETUP,EMERGING,Strong EMA trend and moderate RSI; no setup trigger,,
+BAJFINANCE,2026-11-12,250,1115.0,1007.9,1002.01,986.69,71.77,31.43,NO SETUP,30,,,,0,,,,,NO SETUP,EMERGING,Strong EMA trend and moderate RSI; no setup trigger,,
+BSE,2026-11-12,250,3909.1,3588.74,3470.04,3289.56,73.64,109.94,NO SETUP,30,,,,0,,,,,NO SETUP,EMERGING,Strong EMA trend and moderate RSI; no setup trigger,,
