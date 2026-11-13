@@ -2,3 +2,7 @@ symbol,ex_date,action_type,price_divisor,source_url,source_description,verified_
 DRREDDY,2024-10-28,split,5,https://nsearchives.nseindia.com/content/circulars/CML64562.pdf,NSE listing circular 1982/2024 face value Rs 5 to Re 1,NSE official circular,2026-11-13,yes
 RELIANCE,2024-10-28,bonus,2,https://www.ril.com/sites/default/files/2024-10/SE_29102024.pdf,Issuer exchange disclosure 1 to 1 bonus record date 2024-10-28,Issuer exchange disclosure and NSE listing,2026-11-13,yes
 WIPRO,2024-12-03,bonus,2,https://nsearchives.nseindia.com/content/circulars/FAOP65261.pdf,NSE circular 151/2024 bonus 1 to 1 ex date 2024-12-03,NSE official circular,2026-11-13,yes
+BAJFINANCE,2025-06-16,split_bonus,10,https://nsearchives.nseindia.com/content/circulars/FAOP68462.pdf,NSE FAOP 68462 split 2 to 1 and bonus 4 to 1 combined factor 10,NSE official circular,2026-11-13,yes
+BSE,2025-05-23,bonus,3,https://nsearchives.nseindia.com/content/circulars/FAOP68130.pdf,NSE FAOP 68130 bonus 2 to 1 factor 3,NSE official circular,2026-11-13,yes
+HDFCAMC,2025-11-26,bonus,2,https://www.nseindia.com/companies-listing/corporate-filings-actions?symbol=HDFCAMC,NSE corporate action record bonus 1 to 1 ex date 26 Nov 2025,NSE official corporate actions,2026-11-13,yes
+HDFCBANK,2025-08-26,bonus,2,https://www.nseindia.com/get-quote/equity/HDFCBANK/HDFC-Bank-Limited,NSE security corporate actions bonus 1 to 1 ex date 26 Aug 2025,NSE official security record,2026-11-13,yes
