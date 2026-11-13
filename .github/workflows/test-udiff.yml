@@ -1,0 +1,102 @@
+
+name: EXECUTE Market - UDiFF Source Test
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test-source:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Test NSE UDiFF archive
+        shell: bash
+        run: |
+          python - <<'PY'
+          import urllib.request
+          import urllib.error
+          import io
+          import zipfile
+          import csv
+
+          stamp = "20261112"
+
+          url = (
+              "https://nsearchives.nseindia.com/content/cm/"
+              "BhavCopy_NSE_CM_0_0_0_"
+              + stamp + "_F_0000.csv.zip"
+          )
+
+          request = urllib.request.Request(
+              url,
+              headers={
+                  "User-Agent": "Mozilla/5.0",
+                  "Accept": "*/*",
+                  "Referer": "https://www.nseindia.com/"
+              }
+          )
+
+          print("Testing:", url, flush=True)
+
+          with urllib.request.urlopen(
+              request, timeout=30
+          ) as response:
+              raw = response.read()
+              print("HTTP:", response.status)
+
+          with zipfile.ZipFile(
+              io.BytesIO(raw)
+          ) as archive:
+              names = [
+                  n for n in archive.namelist()
+                  if n.lower().endswith(".csv")
+              ]
+              if len(names) != 1:
+                  raise ValueError(
+                      "Expected exactly one CSV in ZIP"
+                  )
+
+              with archive.open(names[0]) as file:
+                  content = file.read().decode(
+                      "utf-8-sig"
+                  )
+
+          reader = csv.DictReader(
+              io.StringIO(content)
+          )
+
+          rows = list(reader)
+
+          required = {
+              "Sgmt", "FinInstrmTp",
+              "TckrSymb", "ClsPric",
+              "TtlTradgVol"
+          }
+
+          if not required.issubset(
+              reader.fieldnames or []
+          ):
+              raise ValueError(
+                  "Unexpected NSE CSV columns"
+              )
+
+          equities = [
+              r for r in rows
+              if r["Sgmt"].strip() == "CM"
+              and r["FinInstrmTp"].strip() == "STK"
+          ]
+
+          print("Total records:", len(rows))
+          print("Equity records:", len(equities))
+
+          if len(equities) < 100:
+              raise ValueError(
+                  "Insufficient equity records"
+              )
+
+          print("VALIDATION PASSED")
+          PY
