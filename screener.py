@@ -1,6 +1,6 @@
 
 #!/usr/bin/env python3
-"""EXECUTE Market Phase 3B — paper trading only."""
+"""EXECUTE Market Phase 4 — Nifty 100 paper-trading screener."""
 
 import csv
 import json
@@ -9,9 +9,9 @@ from collections import defaultdict
 from datetime import date, datetime, timezone
 from pathlib import Path
 
-INPUT = Path("data/nse_history.csv")
+INPUT = Path("data/nifty100_history.csv")
 OUTPUT = Path("reports")
-SYMBOLS = ("DLF", "HDFCLIFE", "TMCV")
+MIN_SESSIONS = 201
 
 CAPITAL = 50000
 MAX_RISK = 500
@@ -138,7 +138,7 @@ def load_data():
     ) as f:
         reader = csv.DictReader(f)
         required = {
-            "date", "symbol", "series", "open",
+            "date", "symbol", "open",
             "high", "low", "close", "volume"
         }
         if not required.issubset(reader.fieldnames or []):
@@ -146,24 +146,14 @@ def load_data():
 
         for raw in reader:
             symbol = raw["symbol"].strip()
-            if symbol not in SYMBOLS:
-                continue
-
             d = date.fromisoformat(raw["date"])
             key = (symbol, d)
             if key in seen:
                 raise SystemExit(f"Duplicate: {key}")
             seen.add(key)
 
-            series = raw["series"].strip()
-            if series not in ("EQ", "BE"):
-                raise SystemExit(f"Invalid series: {key}")
-            if series == "BE" and symbol != "TMCV":
-                raise SystemExit(f"Unexpected BE: {key}")
-
             row = {
                 "date": d,
-                "series": series,
                 "volume": int(raw["volume"])
             }
             for col in ("open", "high", "low", "close"):
@@ -184,9 +174,9 @@ def load_data():
 
             data[symbol].append(row)
 
-    for symbol in SYMBOLS:
-        if not data[symbol]:
-            raise SystemExit(f"Missing: {symbol}")
+    if len(data) != 100:
+        raise SystemExit(f"Expected 100 Nifty symbols, found {len(data)}")
+    for symbol in data:
         data[symbol].sort(key=lambda x: x["date"])
 
     return data
@@ -208,7 +198,7 @@ def analyze(symbol, rows, today):
         raise SystemExit("Future-dated data")
 
     fresh = age <= MAX_AGE_DAYS
-    enough = len(rows) >= 201
+    enough = len(rows) >= MIN_SESSIONS
 
     trend = bool(
         enough and close > e20 > e50 > e200
@@ -352,7 +342,7 @@ def main():
 
     results = [
         analyze(symbol, data[symbol], today)
-        for symbol in SYMBOLS
+        for symbol in sorted(data)
     ]
 
     results.sort(
@@ -362,10 +352,12 @@ def main():
     OUTPUT.mkdir(parents=True, exist_ok=True)
 
     report = {
-        "version": "3B",
+        "version": "4.0",
         "generated_utc": datetime.now(
             timezone.utc
         ).isoformat(),
+        "universe_size": len(data),
+        "eligible_history_count": sum(len(rows) >= MIN_SESSIONS for rows in data.values()),
         "capital": CAPITAL,
         "risk_limit": MAX_RISK,
         "paper_only": True,
@@ -396,7 +388,7 @@ def main():
         writer.writeheader()
         writer.writerows(results)
 
-    print("EXECUTE MARKET PHASE 3B")
+    print("EXECUTE MARKET PHASE 4")
     print("PAPER TRADING ONLY")
     for r in results:
         print(
@@ -405,6 +397,7 @@ def main():
             "|", r["status"],
             "| Net R:R", r["net_rr"]
         )
+    print("Symbols screened:", len(results))
     print("Reports generated successfully")
 
 
