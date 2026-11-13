@@ -10,6 +10,8 @@ on:
       - 'reports/opportunities.json'
       - 'reports/opportunities.csv'
       - 'reports/screening.csv'
+      - 'reports/enhanced_stage2.csv'
+      - 'reports/enhanced_stage2.json'
       - '.github/workflows/deploy-dashboard.yml'
 permissions:
   contents: read
@@ -44,6 +46,9 @@ jobs:
           mkdir -p _site/reports
           cp index.html manifest.webmanifest _site/
           cp reports/opportunities.json reports/opportunities.csv reports/screening.csv _site/reports/
+          if test -s reports/enhanced_stage2.csv && test -s reports/enhanced_stage2.json; then
+            cp reports/enhanced_stage2.csv reports/enhanced_stage2.json _site/reports/
+          fi
           python generate_pwa_icons.py
           touch _site/.nojekyll
       - name: Configure Pages
