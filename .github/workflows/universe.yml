@@ -1,0 +1,117 @@
+
+name: EXECUTE Market - Nifty 100 Universe
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-universe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Download and validate Nifty 100
+        shell: bash
+        run: |
+          python - <<'PY'
+          import csv
+          import io
+          import re
+          import urllib.request
+          from datetime import datetime, timezone
+          from pathlib import Path
+
+          urls = [
+              "https://nsearchives.nseindia.com/content/indices/ind_nifty100list.csv",
+              "https://www.niftyindices.com/IndexConstituent/ind_nifty100list.csv"
+          ]
+
+          symbols = None
+
+          for url in urls:
+              try:
+                  req = urllib.request.Request(
+                      url,
+                      headers={
+                          "User-Agent": "Mozilla/5.0",
+                          "Accept": "text/csv,*/*"
+                      }
+                  )
+                  with urllib.request.urlopen(
+                      req, timeout=20
+                  ) as response:
+                      content = response.read().decode(
+                          "utf-8-sig"
+                      )
+
+                  reader = csv.DictReader(
+                      io.StringIO(content)
+                  )
+                  if "Symbol" not in (reader.fieldnames or []):
+                      raise ValueError("Symbol column missing")
+
+                  values = [
+                      row["Symbol"].strip()
+                      for row in reader
+                  ]
+
+                  if len(values) != 100:
+                      raise ValueError(
+                          f"Expected 100 rows, got {len(values)}"
+                      )
+
+                  if len(set(values)) != 100:
+                      raise ValueError("Duplicate symbols")
+
+                  if not all(
+                      re.fullmatch(r"[A-Z0-9&.-]+", s)
+                      for s in values
+                  ):
+                      raise ValueError("Invalid symbols")
+
+                  symbols = values
+                  print("Source:", url)
+                  break
+
+              except Exception as exc:
+                  print("Source failed:", url, exc)
+
+          if symbols is None:
+              raise SystemExit(
+                  "FAILED: No validated Nifty 100 list"
+              )
+
+          Path("data").mkdir(exist_ok=True)
+
+          with open(
+              "data/nifty100_symbols.csv",
+              "w", newline="", encoding="utf-8"
+          ) as file:
+              writer = csv.writer(file)
+              writer.writerow(["symbol"])
+              for symbol in symbols:
+                  writer.writerow([symbol])
+
+          print("VALIDATION PASSED")
+          print("Constituents:", len(symbols))
+          print("Checked UTC:", datetime.now(
+              timezone.utc
+          ).isoformat())
+          print("Symbols:", ", ".join(symbols))
+          PY
+
+      - name: Upload validated universe
+        uses: actions/upload-artifact@v4
+        with:
+          name: nifty100-universe
+          path: data/nifty100_symbols.csv
+          if-no-files-found: error
+          retention-days: 30
