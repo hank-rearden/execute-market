@@ -1,0 +1,92 @@
+name: EXECUTE Market - Save 250 Sessions
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  save-history:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download successful history run 3 artifact
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          RUN_ID="$(gh run list --workflow history100.yml --limit 100 --json databaseId,number,conclusion --jq '.[] | select(.number == 3 and .conclusion == "success") | .databaseId' | head -n 1)"
+          if [ -z "$RUN_ID" ]; then
+            echo "Cannot find successful history run #3"
+            exit 1
+          fi
+          mkdir -p recovered
+          gh run download "$RUN_ID" --name execute-nifty100-history --dir recovered
+
+      - name: Validate full dataset
+        shell: bash
+        run: |
+          python - <<'PY'
+          import csv
+          import json
+          import shutil
+          from pathlib import Path
+          from collections import Counter
+          from datetime import date
+
+          csvs = list(Path("recovered").rglob("nifty100_history.csv"))
+          reports = list(Path("recovered").rglob("history100_report.json"))
+          if len(csvs) != 1 or len(reports) != 1:
+              raise SystemExit("Missing or ambiguous artifact files")
+          report = json.loads(reports[0].read_text())
+          if report.get("sessions") != 250 or report.get("universe_size") != 100:
+              raise SystemExit("Report does not confirm 250 sessions and 100 symbols")
+          fields = ["date", "symbol", "open", "high", "low", "close", "volume"]
+          with csvs[0].open(newline="", encoding="utf-8-sig") as f:
+              reader = csv.DictReader(f)
+              if reader.fieldnames != fields:
+                  raise SystemExit("Unexpected CSV columns")
+              rows = list(reader)
+          pairs = [(r["date"], r["symbol"]) for r in rows]
+          if len(pairs) != len(set(pairs)):
+              raise SystemExit("Duplicate date-symbol records")
+          days = Counter(r["date"] for r in rows)
+          if len(days) != 250:
+              raise SystemExit(f"Expected 250 sessions, got {len(days)}")
+          if any(n < 60 or n > 100 for n in days.values()):
+              raise SystemExit("Invalid session coverage")
+          for r in rows:
+              date.fromisoformat(r["date"])
+              op, hi, lo, cl = (float(r[k]) for k in ("open", "high", "low", "close"))
+              vol = float(r["volume"])
+              if not (lo > 0 and lo <= op <= hi and lo <= cl <= hi and vol >= 0):
+                  raise SystemExit("Invalid OHLCV: " + str((r["date"],r["symbol"])))
+          if report.get("records") != len(rows):
+              raise SystemExit("Report record count mismatch")
+          Path("data").mkdir(exist_ok=True)
+          shutil.copyfile(csvs[0], "data/nifty100_history.csv")
+          shutil.copyfile(reports[0], "data/history100_report.json")
+          print("VALIDATED:", len(days), "sessions,", len(rows), "records")
+          print("NOTE: prices are not corporate-action adjusted; paper trading only")
+          PY
+
+      - name: Commit validated history
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/nifty100_history.csv data/history100_report.json
+          if git diff --cached --quiet; then
+            echo "Validated data already committed."
+            exit 0
+          fi
+          git commit -m "Save validated 250-session Nifty 100 history"
+          git pull --rebase origin main
+          git push origin HEAD:main
