@@ -1,0 +1,82 @@
+name: EXECUTE Market - Restore Historical Data
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  restore-history:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+
+      - name: Download artifact from history run 2
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          RUN_ID="$(gh run list --workflow history100.yml --limit 100 --json databaseId,number --jq '.[] | select(.number == 2) | .databaseId' | head -n 1)"
+          if [ -z "$RUN_ID" ]; then
+            echo "Cannot find Nifty 100 History run #2"
+            exit 1
+          fi
+          mkdir -p recovered
+          gh run download "$RUN_ID" --name execute-nifty100-history --dir recovered
+          find recovered -type f
+
+      - name: Validate and restore CSV
+        shell: bash
+        run: |
+          python - <<'PY'
+          import csv
+          import shutil
+          from collections import Counter
+          from pathlib import Path
+
+          files = list(Path("recovered").rglob("nifty100_history.csv"))
+          if len(files) != 1:
+              raise SystemExit("Expected exactly one historical CSV in artifact")
+          source = files[0]
+          with source.open(newline="", encoding="utf-8-sig") as f:
+              reader = csv.DictReader(f)
+              expected = ["date", "symbol", "open", "high", "low", "close", "volume"]
+              if reader.fieldnames != expected:
+                  raise SystemExit("Unexpected CSV columns")
+              rows = list(reader)
+          keys = [(r["date"], r["symbol"]) for r in rows]
+          if len(keys) != len(set(keys)):
+              raise SystemExit("Duplicate date/symbol pairs")
+          counts = Counter(r["date"] for r in rows)
+          if len(counts) != 229 or len(rows) != 22658:
+              raise SystemExit(
+                  f"Unexpected artifact: {len(counts)} sessions, {len(rows)} records"
+              )
+          if any(v < 60 or v > 100 for v in counts.values()):
+              raise SystemExit("Unexpected daily symbol coverage")
+          Path("data").mkdir(exist_ok=True)
+          shutil.copyfile(source, "data/nifty100_history.csv")
+          print(f"VALIDATED: {len(counts)} sessions, {len(rows)} records")
+          PY
+
+      - name: Commit historical data
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/nifty100_history.csv
+          if git diff --cached --quiet; then
+            echo "History already saved; no commit necessary."
+            exit 0
+          fi
+          git commit -m "Restore validated 229-session Nifty 100 history"
+          git pull --rebase origin main
+          git push origin HEAD:main
