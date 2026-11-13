@@ -1,13 +1,21 @@
 {
-  "generated_utc": "2026-11-13T05:25:25.037576+00:00",
+  "complex_events": 2,
+  "excluded_symbols": [
+    "SIEMENS",
+    "VEDL"
+  ],
+  "backtest_eligible_rows": 54557,
+  "flag_triage_complete": true,
+  "unverified_nonflagged_actions_possible": true,
+  "generated_utc": "2026-11-13T05:28:35.178220+00:00",
   "raw_rows": 55719,
   "adjusted_rows": 55719,
   "flags": 18,
-  "approved_events": 7,
-  "unverified_flags": 11,
+  "approved_events": 16,
+  "unverified_flags": 0,
   "raw_archive_unchanged": true,
   "fully_corporate_action_verified": false,
   "historical_membership_verified": false,
   "eligible_for_real_money": false,
-  "status": "RESEARCH ONLY \u2014 VERIFIED EVENTS PARTIAL; DO NOT BACKTEST AS FULLY ADJUSTED"
+  "status": "RESEARCH ONLY \u2014 FLAG TRIAGE DONE; FULL ACTION COVERAGE AND DEMERGER TOTAL RETURN UNVERIFIED"
 }
