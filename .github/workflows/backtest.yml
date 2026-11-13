@@ -1,0 +1,48 @@
+name: EXECUTE Market - Preliminary Backtest
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  compare-rankings:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Compare historical daily rankings
+        run: python backtest_preliminary.py
+      - name: Validate study outputs
+        run: |
+          python - <<'PY'
+          import json,csv
+          from pathlib import Path
+          r=json.loads(Path("reports/backtest_preliminary.json").read_text())
+          assert r["paper_only"] and r["data_sessions"]>=210
+          assert all(r["results"][str(h)][m]["signal_dates"]>0 for h in (5,10) for m in ("baseline","enhanced"))
+          with Path("reports/backtest_observations.csv").open(newline="") as f:
+              assert sum(1 for _ in csv.DictReader(f))>0
+          print("Preliminary study validated")
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: execute-market-preliminary-backtest
+          path: |
+            reports/backtest_preliminary.json
+            reports/backtest_observations.csv
+          retention-days: 30
+      - name: Commit study results
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add reports/backtest_preliminary.json reports/backtest_observations.csv
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "Publish preliminary baseline vs enhanced ranking study"
+          git pull --rebase origin main
+          git push origin HEAD:main
