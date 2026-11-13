@@ -1,19 +1,39 @@
 {
-  "generated_utc": "2026-11-13T04:30:24.209712+00:00",
-  "requested_start": "2024-08-22",
-  "requested_days": 45,
-  "new_sessions": 31,
-  "skipped_dates": 13,
+  "generated_utc": "2026-11-13T04:54:13.369721+00:00",
+  "requested_start": "2024-10-05",
+  "requested_days": 180,
+  "new_sessions": 122,
+  "skipped_dates": 52,
   "failures": [
     {
-      "date": "2024-10-02",
+      "date": "2024-11-15",
+      "error": "HTTP Error 404: Not Found"
+    },
+    {
+      "date": "2024-11-20",
+      "error": "HTTP Error 404: Not Found"
+    },
+    {
+      "date": "2024-12-25",
+      "error": "HTTP Error 404: Not Found"
+    },
+    {
+      "date": "2025-02-26",
+      "error": "HTTP Error 404: Not Found"
+    },
+    {
+      "date": "2025-03-14",
+      "error": "HTTP Error 404: Not Found"
+    },
+    {
+      "date": "2025-03-31",
       "error": "HTTP Error 404: Not Found"
     }
   ],
-  "archive_sessions": 62,
-  "archive_records": 5704,
+  "archive_sessions": 184,
+  "archive_records": 17039,
   "first_date": "2024-07-08",
-  "last_date": "2024-10-04",
+  "last_date": "2025-04-02",
   "current_universe_only": true,
   "corporate_action_adjusted": false,
   "historical_membership_verified": false,

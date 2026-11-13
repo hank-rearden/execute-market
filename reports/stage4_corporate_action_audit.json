@@ -1,7 +1,43 @@
 {
-  "generated_utc": "2026-11-13T04:30:24.269537+00:00",
-  "flags_count": 1,
+  "generated_utc": "2026-11-13T04:54:13.472840+00:00",
+  "flags_count": 6,
   "flags": [
+    {
+      "symbol": "DRREDDY",
+      "previous_date": "2024-10-25",
+      "date": "2024-10-28",
+      "previous_close": 6514.7,
+      "close": 1311.5,
+      "change_pct": -79.869,
+      "reason": "Large move; independently check split/bonus/demerger/symbol history"
+    },
+    {
+      "symbol": "MAZDOCK",
+      "previous_date": "2024-12-26",
+      "date": "2024-12-27",
+      "previous_close": 4729.75,
+      "close": 2317.4,
+      "change_pct": -51.004,
+      "reason": "Large move; independently check split/bonus/demerger/symbol history"
+    },
+    {
+      "symbol": "RELIANCE",
+      "previous_date": "2024-10-25",
+      "date": "2024-10-28",
+      "previous_close": 2655.7,
+      "close": 1334.35,
+      "change_pct": -49.755,
+      "reason": "Large move; independently check split/bonus/demerger/symbol history"
+    },
+    {
+      "symbol": "SHRIRAMFIN",
+      "previous_date": "2025-01-09",
+      "date": "2025-01-10",
+      "previous_close": 2809.85,
+      "close": 532.0,
+      "change_pct": -81.067,
+      "reason": "Large move; independently check split/bonus/demerger/symbol history"
+    },
     {
       "symbol": "VBL",
       "previous_date": "2024-09-11",
@@ -9,6 +45,15 @@
       "previous_close": 1569.15,
       "close": 645.6,
       "change_pct": -58.857,
+      "reason": "Large move; independently check split/bonus/demerger/symbol history"
+    },
+    {
+      "symbol": "WIPRO",
+      "previous_date": "2024-12-02",
+      "date": "2024-12-03",
+      "previous_close": 584.55,
+      "close": 291.65,
+      "change_pct": -50.107,
       "reason": "Large move; independently check split/bonus/demerger/symbol history"
     }
   ],
