@@ -1,17 +1,18 @@
 {
-  "generated_utc": "2026-11-13T06:51:39.586763+00:00",
+  "generated_utc": "2026-11-13T16:24:45.103728+00:00",
   "universe_source": "https://nsearchives.nseindia.com/content/indices/ind_nifty100list.csv",
   "universe_size": 100,
   "target_sessions": 250,
   "sessions": 250,
-  "records": 24745,
-  "latest_date": "2026-11-12",
-  "earliest_date": "2025-09-22",
+  "records": 24750,
+  "latest_date": "2026-11-13",
+  "earliest_date": "2025-09-23",
   "symbols_below_200_sessions": [
     "LTM",
     "VAML"
   ],
   "recent_fetch_successes": [
+    "2026-11-13",
     "2026-11-12",
     "2026-11-11",
     "2026-11-09",
@@ -22,10 +23,6 @@
     "2026-11-02"
   ],
   "recent_fetch_failures": [
-    {
-      "date": "2026-11-13",
-      "reason": "HTTP Error 404: Not Found"
-    },
     {
       "date": "2026-11-10",
       "reason": "HTTP Error 404: Not Found"

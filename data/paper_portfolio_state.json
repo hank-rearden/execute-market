@@ -1,11 +1,26 @@
 {
   "version": 1,
   "paper_only": true,
-  "cash": 50000.0,
-  "open": {},
-  "last_processed_date": "2026-11-12",
+  "cash": 42730.27754,
+  "open": {
+    "ZYDUSLIFE": {
+      "signal_date": "2026-11-12",
+      "entry_date": "2026-11-13",
+      "entry_fill": 1211.62041,
+      "quantity": 6,
+      "stop": 1143.48,
+      "target": 1377.74,
+      "holding_sessions": 0
+    }
+  },
+  "last_processed_date": "2026-11-13",
   "starting_date": "2026-11-12",
   "peak_equity": 50000.0,
   "realized_net_pnl": 0.0,
-  "processed_signal_keys": []
+  "processed_signal_keys": [
+    [
+      "2026-11-12",
+      "ZYDUSLIFE"
+    ]
+  ]
 }
