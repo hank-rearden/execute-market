@@ -1,0 +1,55 @@
+{
+  "version": "2.0-matched",
+  "generated_utc": "2026-11-13T04:11:57.021846+00:00",
+  "data_first_session": "2025-09-22",
+  "data_last_session": "2026-11-12",
+  "horizons_trading_sessions": [
+    5,
+    10
+  ],
+  "maximum_picks_per_date": 15,
+  "benchmark": "Equal-weight return of available eligible stocks from current Nifty 100 universe, NOT the official Nifty 100 index",
+  "comparison": "Same dates, same number of stocks for each model and same calendar exit dates",
+  "summary": {
+    "5": {
+      "matched_dates": 44,
+      "matched_stock_observations_per_model": 364,
+      "average_stocks_per_date": 8.2727,
+      "min_stocks_per_date": 1,
+      "max_stocks_per_date": 15,
+      "baseline_average_cohort_return_pct": -0.6874,
+      "enhanced_average_cohort_return_pct": -0.2966,
+      "proxy_average_cohort_return_pct": 0.153,
+      "enhanced_minus_baseline_pct_points": 0.3908,
+      "enhanced_outperformed_baseline_dates": 21,
+      "enhanced_outperformance_date_rate_pct": 47.7273,
+      "baseline_average_excess_vs_proxy_pct_points": -0.8403,
+      "enhanced_average_excess_vs_proxy_pct_points": -0.4496
+    },
+    "10": {
+      "matched_dates": 39,
+      "matched_stock_observations_per_model": 300,
+      "average_stocks_per_date": 7.6923,
+      "min_stocks_per_date": 1,
+      "max_stocks_per_date": 15,
+      "baseline_average_cohort_return_pct": -1.6055,
+      "enhanced_average_cohort_return_pct": -1.0186,
+      "proxy_average_cohort_return_pct": -0.2718,
+      "enhanced_minus_baseline_pct_points": 0.5869,
+      "enhanced_outperformed_baseline_dates": 21,
+      "enhanced_outperformance_date_rate_pct": 53.8462,
+      "baseline_average_excess_vs_proxy_pct_points": -1.3337,
+      "enhanced_average_excess_vs_proxy_pct_points": -0.7468
+    }
+  },
+  "paper_only": true,
+  "limitations": [
+    "Benchmark is a current-constituent equal-weight proxy, not the official float-weighted Nifty 100 index.",
+    "Current constituent membership causes survivorship and historical universe bias.",
+    "OHLCV not independently corporate-action adjusted; splits/dividends may distort returns.",
+    "Close-to-close returns are not executable trade returns; no stop/target/cost/slippage/tax modeling.",
+    "Overlapping cohorts and short 250-session dataset reduce statistical reliability.",
+    "Selection count is matched but the enhanced model can include no-setup research stocks; strategy eligibility differs.",
+    "In-sample comparison only; no out-of-sample validation or risk-adjusted portfolio equity curve."
+  ]
+}
