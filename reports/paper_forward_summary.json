@@ -1,0 +1,25 @@
+{
+  "version": "5.0-forward-paper",
+  "generated_utc": "2026-11-13T06:51:40.265879+00:00",
+  "paper_only": true,
+  "live_quotes": false,
+  "orders_placed": false,
+  "starting_capital": 50000,
+  "last_processed_date": "2026-11-12",
+  "closed_trades": 0,
+  "open_positions": 0,
+  "realized_net_pnl": 0.0,
+  "win_rate_pct": null,
+  "average_net_pnl": null,
+  "profit_factor": null,
+  "marked_equity": 50000.0,
+  "equity_observations": 0,
+  "limitations": [
+    "Only next-session OHLC-based simulated fills, not actual executions",
+    "Intraday ordering unknowable; entry-day stops assumed adverse; entry-day targets not credited",
+    "Unadjusted NSE historical prices; corporate actions may distort results",
+    "Fees and slippage estimated; taxes excluded",
+    "No live data; stops can gap past planned loss",
+    "New forward account starts at journal anchor; prior backtest not mixed with forward results"
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "paper_only": true,
+  "cash": 50000.0,
+  "open": {},
+  "last_processed_date": "2026-11-12",
+  "starting_date": "2026-11-12",
+  "peak_equity": 50000.0,
+  "realized_net_pnl": 0.0,
+  "processed_signal_keys": []
+}
