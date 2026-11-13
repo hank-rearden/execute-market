@@ -1,0 +1,55 @@
+name: EXECUTE Market - Stage 4B Corporate Action Review
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: execute-market-stage4b
+  cancel-in-progress: false
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Generate evidence-gated review and adjusted research dataset
+        run: python stage4b_corporate_actions.py
+      - name: Validate fail-closed research output
+        run: |
+          python - <<'PY'
+          import csv,json
+          from pathlib import Path
+          report=json.loads(Path("reports/stage4b_status.json").read_text())
+          assert report["raw_rows"]==report["adjusted_rows"]
+          assert report["raw_archive_unchanged"] is True
+          assert report["fully_corporate_action_verified"] is False
+          assert report["eligible_for_real_money"] is False
+          with Path("data/stage4b_adjusted_history.csv").open(newline="") as f:
+              assert sum(1 for _ in csv.DictReader(f))==report["raw_rows"]
+          print("Stage 4B research review validated")
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: execute-market-stage4b-research
+          path: |
+            reports/stage4b_review.csv
+            reports/stage4b_status.json
+            data/stage4b_adjusted_history.csv
+          retention-days: 30
+      - name: Commit Stage 4B review outputs
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add reports/stage4b_review.csv reports/stage4b_status.json data/stage4b_adjusted_history.csv
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "Generate Stage 4B corporate-action research review"
+          git pull --rebase origin main
+          git push origin HEAD:main
