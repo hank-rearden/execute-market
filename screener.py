@@ -383,7 +383,9 @@ def main():
         "w", newline="", encoding="utf-8"
     ) as f:
         writer = csv.DictWriter(
-            f, fieldnames=list(results[0].keys())
+            f, fieldnames=list(dict.fromkeys(
+                key for result in results for key in result
+            ))
         )
         writer.writeheader()
         writer.writerows(results)
