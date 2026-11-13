@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   screen-stocks:
@@ -34,3 +34,35 @@ jobs:
             reports/screening.json
           if-no-files-found: error
           retention-days: 30
+
+      - name: Save validated screening reports to repository
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import csv
+          import json
+          from pathlib import Path
+
+          report = json.loads(Path("reports/screening.json").read_text(encoding="utf-8"))
+          results = report.get("results")
+          if not report.get("paper_only") or not isinstance(results, list) or len(results) != 100:
+              raise SystemExit("Refusing to commit: expected 100 paper-only screening results")
+          if len({row["symbol"] for row in results}) != 100:
+              raise SystemExit("Refusing to commit: duplicate symbols")
+          with Path("reports/screening.csv").open(newline="", encoding="utf-8") as file:
+              csv_rows = list(csv.DictReader(file))
+          if len(csv_rows) != 100:
+              raise SystemExit("Refusing to commit: CSV does not have 100 rows")
+          print("Validated 100 paper-trading screening results")
+          PY
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add reports/screening.csv reports/screening.json
+          if git diff --cached --quiet; then
+            echo "Screening reports unchanged; no commit necessary."
+            exit 0
+          fi
+          git commit -m "Update Nifty 100 paper-trading screening reports"
+          git pull --rebase origin main
+          git push origin HEAD:main
