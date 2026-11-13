@@ -1,0 +1,26 @@
+{
+  "generated_utc": "2026-11-13T04:28:48.205763+00:00",
+  "requested_start": "2024-07-08",
+  "requested_days": 45,
+  "new_sessions": 31,
+  "skipped_dates": 12,
+  "failures": [
+    {
+      "date": "2024-07-17",
+      "error": "HTTP Error 404: Not Found"
+    },
+    {
+      "date": "2024-08-15",
+      "error": "HTTP Error 404: Not Found"
+    }
+  ],
+  "archive_sessions": 31,
+  "archive_records": 2852,
+  "first_date": "2024-07-08",
+  "last_date": "2024-08-21",
+  "current_universe_only": true,
+  "corporate_action_adjusted": false,
+  "historical_membership_verified": false,
+  "eligible_for_real_money": false,
+  "status": "RESEARCH DATA ONLY \u2014 NOT VALIDATED FIVE-YEAR HISTORY"
+}
