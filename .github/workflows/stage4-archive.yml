@@ -6,12 +6,12 @@ on:
       start_date:
         description: "Batch start (YYYY-MM-DD), UDiFF available from 2024-07-08"
         required: true
-        default: "2024-07-08"
+        default: "2024-10-05"
         type: string
       calendar_days:
-        description: "Calendar days in batch (1-65)"
+        description: "Calendar days in batch (1-180)"
         required: true
-        default: "45"
+        default: "180"
         type: string
 
 permissions:
@@ -24,7 +24,7 @@ concurrency:
 jobs:
   archive:
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 120
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
