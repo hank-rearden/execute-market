@@ -1,0 +1,66 @@
+{
+  "version": "1.0-preliminary",
+  "generated_utc": "2026-11-13T04:07:47.332751+00:00",
+  "data_sessions": 250,
+  "first_session": "2025-09-22",
+  "last_session": "2026-11-12",
+  "models": [
+    "baseline",
+    "enhanced"
+  ],
+  "max_stocks_per_cohort": 15,
+  "horizons_trading_sessions": [
+    5,
+    10
+  ],
+  "results": {
+    "5": {
+      "baseline": {
+        "observations": 300,
+        "signal_dates": 39,
+        "average_forward_return_pct": -1.7862,
+        "median_forward_return_pct": -1.8674,
+        "positive_observation_rate_pct": 26.0,
+        "average_equal_weight_daily_cohort_return_pct": -1.4275
+      },
+      "enhanced": {
+        "observations": 600,
+        "signal_dates": 40,
+        "average_forward_return_pct": -0.8709,
+        "median_forward_return_pct": -0.945,
+        "positive_observation_rate_pct": 36.83,
+        "average_equal_weight_daily_cohort_return_pct": -0.8709
+      }
+    },
+    "10": {
+      "baseline": {
+        "observations": 300,
+        "signal_dates": 39,
+        "average_forward_return_pct": -2.5329,
+        "median_forward_return_pct": -3.0547,
+        "positive_observation_rate_pct": 23.0,
+        "average_equal_weight_daily_cohort_return_pct": -1.6054
+      },
+      "enhanced": {
+        "observations": 600,
+        "signal_dates": 40,
+        "average_forward_return_pct": -1.022,
+        "median_forward_return_pct": -1.6592,
+        "positive_observation_rate_pct": 35.67,
+        "average_equal_weight_daily_cohort_return_pct": -1.022
+      }
+    }
+  },
+  "limitations": [
+    "Not a trade execution backtest: close-to-close forward returns only; no entries, stops, costs, slippage or taxes.",
+    "Current Nifty 100 constituent universe creates survivorship and point-in-time membership bias.",
+    "Historical OHLCV is not independently corporate-action adjusted.",
+    "Only ~250 sessions; EMA200 warm-up leaves a short evaluation period.",
+    "Overlapping 5/10-session cohorts are statistically dependent; observations are not independent.",
+    "Enhanced scoring thresholds were designed with knowledge of this period; results are in-sample.",
+    "No index-relative returns, sector regime or out-of-sample validation.",
+    "No actual portfolio equity curve or maximum drawdown can be inferred.",
+    "Different numbers of selected stocks and dates can affect model comparisons."
+  ],
+  "paper_only": true
+}
