@@ -24,6 +24,9 @@ jobs:
       - name: Run technical screener
         run: python screener.py
 
+      - name: Rank paper-trading opportunities
+        run: python rank_opportunities.py
+
       - name: Upload screening reports
         if: always()
         uses: actions/upload-artifact@v4
@@ -32,6 +35,8 @@ jobs:
           path: |
             reports/screening.csv
             reports/screening.json
+            reports/opportunities.csv
+            reports/opportunities.json
           if-no-files-found: error
           retention-days: 30
 
@@ -58,7 +63,7 @@ jobs:
           PY
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add reports/screening.csv reports/screening.json
+          git add reports/screening.csv reports/screening.json reports/opportunities.csv reports/opportunities.json
           if git diff --cached --quiet; then
             echo "Screening reports unchanged; no commit necessary."
             exit 0
