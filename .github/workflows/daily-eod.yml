@@ -1,0 +1,81 @@
+name: EXECUTE Market - Automatic Daily EOD
+
+on:
+  workflow_dispatch:
+  schedule:
+    # 18:30 IST, Monday-Friday. GitHub scheduled jobs may start late.
+    - cron: '0 13 * * 1-5'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: execute-market-eod
+  cancel-in-progress: false
+
+jobs:
+  refresh-screen-publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Refresh NSE 250-session EOD history
+        run: python refresh_eod.py
+      - name: Run baseline technical screener
+        run: python screener.py
+      - name: Rank baseline opportunities
+        run: python rank_opportunities.py
+      - name: Run enhanced Stage 2
+        run: python enhanced_stage2.py
+      - name: Validate reports and historical data
+        run: |
+          python - <<'PY'
+          import csv,json
+          from pathlib import Path
+          history=json.loads(Path("data/history100_report.json").read_text())
+          base=json.loads(Path("reports/screening.json").read_text())
+          enhanced=json.loads(Path("reports/enhanced_stage2.json").read_text())
+          opp=json.loads(Path("reports/opportunities.json").read_text())
+          assert history["sessions"]==250 and history["universe_size"]==100
+          assert base["paper_only"] and len(base["results"])==100
+          assert enhanced["paper_only"] and len(enhanced["results"])==100
+          assert opp["paper_only"] and len(opp["shortlist"])<=15
+          assert all(r["data_date"]==history["latest_date"] for r in base["results"] if r["status"]!="INSUFFICIENT HISTORY")
+          assert all(r["baseline_category"]!="UNKNOWN" for r in enhanced["results"])
+          print("All EOD validation checks passed",history["latest_date"])
+          PY
+      - name: Upload validated EOD artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: execute-market-daily-eod
+          path: |
+            data/nifty100_history.csv
+            data/history100_report.json
+            reports/screening.csv
+            reports/screening.json
+            reports/opportunities.csv
+            reports/opportunities.json
+            reports/enhanced_stage2.csv
+            reports/enhanced_stage2.json
+          retention-days: 30
+      - name: Commit validated data and reports
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/nifty100_history.csv data/history100_report.json reports/screening.csv reports/screening.json reports/opportunities.csv reports/opportunities.json reports/enhanced_stage2.csv reports/enhanced_stage2.json
+          if git diff --cached --quiet; then
+            echo "No changes to publish"
+            exit 0
+          fi
+          git commit -m "Update automatic NSE EOD history and paper screening"
+          git pull --rebase origin main
+          git push origin HEAD:main
