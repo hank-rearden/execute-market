@@ -1,0 +1,3 @@
+symbol,event_date,event_type,source_url,verification_status,handling,notes
+SIEMENS,2025-04-07,demerger,https://www.nseindia.com/get-quote/equity/SIEMENS/Siemens-Limited,EVENT_CONFIRMED_PRICE_METHOD_UNRESOLVED,EXCLUDE_FROM_ADJUSTED_BACKTEST,Siemens Energy business demerger; no validated share entitlement total return reconstruction
+VEDL,2026-04-30,demerger,https://nsearchives.nseindia.com/corporate/VEDL_16052026123241_VEDLSEIntimationCostofApportionmentsigned.pdf,EVENT_CONFIRMED_PRICE_METHOD_UNRESOLVED,EXCLUDE_FROM_ADJUSTED_BACKTEST,Four resulting companies; tax cost allocation percentages are not historical market price adjustment factors
