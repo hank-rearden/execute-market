@@ -15,6 +15,8 @@ EVENTS=Path("data/stage4b_verified_actions.csv")
 REVIEW=Path("reports/stage4b_review.csv")
 OUT=Path("data/stage4b_adjusted_history.csv")
 REPORT=Path("reports/stage4b_status.json")
+COMPLEX=Path("data/stage4b_complex_actions.csv")
+ELIGIBLE=Path("data/stage4b_backtest_eligible_history.csv")
 FIELDS=["date","symbol","open","high","low","close","volume"]
 EVENT_FIELDS=["symbol","ex_date","action_type","price_divisor","source_url","source_description","verified_by","verification_date","approved"]
 def readcsv(path):
@@ -48,11 +50,16 @@ def main():
     bysym=defaultdict(list)
     for s,d,f,e in ledger:bysym[s].append((d,f))
     for s in bysym:bysym[s].sort()
+    complex_events=readcsv(COMPLEX)
+    complex_keys={(e["symbol"],e["event_date"]) for e in complex_events}
+    complex_symbols={e["symbol"] for e in complex_events}
+    if any(e["verification_status"]!="EVENT_CONFIRMED_PRICE_METHOD_UNRESOLVED" or e["handling"]!="EXCLUDE_FROM_ADJUSTED_BACKTEST" for e in complex_events):
+        raise RuntimeError("Complex event without explicit safe exclusion")
     reviewed={(s,d) for s,d,_,_ in ledger}
     review=[]
     for f in flags:
         key=(f["symbol"],f["date"])
-        review.append({"symbol":key[0],"event_date":key[1],"previous_date":f["previous_date"],"previous_close":f["previous_close"],"close":f["close"],"change_pct":f["change_pct"],"status":"APPROVED_LEDGER_EVENT" if key in reviewed else "UNVERIFIED_REQUIRES_NSE_EVIDENCE","source":"NSE corporate filings: https://www.nseindia.com/companies-listing/corporate-filings-actions"})
+        review.append({"symbol":key[0],"event_date":key[1],"previous_date":f["previous_date"],"previous_close":f["previous_close"],"close":f["close"],"change_pct":f["change_pct"],"status":"APPROVED_LEDGER_EVENT" if key in reviewed else "COMPLEX_DEMERGER_EXCLUDED" if key in complex_keys else "UNVERIFIED_REQUIRES_NSE_EVIDENCE","source":"NSE corporate filings: https://www.nseindia.com/companies-listing/corporate-filings-actions"})
     writecsv(REVIEW,["symbol","event_date","previous_date","previous_close","close","change_pct","status","source"],review)
     # Prices back-adjusted onto the last-date share basis; volume inversely adjusted.
     # No adjustment at all unless there is an approved ledger entry.
@@ -68,7 +75,9 @@ def main():
         row["cumulative_price_divisor"]=format(factor,".10g")
         adjusted.append(row)
     writecsv(OUT,FIELDS+["cumulative_price_divisor"],adjusted)
-    report={"generated_utc":datetime.now(timezone.utc).isoformat(),"raw_rows":len(raw),"adjusted_rows":len(adjusted),"flags":len(flags),"approved_events":len(ledger),"unverified_flags":sum(x["status"].startswith("UNVERIFIED") for x in review),"raw_archive_unchanged":True,"fully_corporate_action_verified":False,"historical_membership_verified":False,"eligible_for_real_money":False,"status":"RESEARCH ONLY — VERIFIED EVENTS PARTIAL; DO NOT BACKTEST AS FULLY ADJUSTED"}
+    eligible=[r for r in adjusted if r["symbol"] not in complex_symbols]
+    writecsv(ELIGIBLE,FIELDS+["cumulative_price_divisor"],eligible)
+    report={"complex_events":len(complex_events),"excluded_symbols":sorted(complex_symbols),"backtest_eligible_rows":len(eligible),"flag_triage_complete":all(x["status"]!="UNVERIFIED_REQUIRES_NSE_EVIDENCE" for x in review),"unverified_nonflagged_actions_possible":True,"generated_utc":datetime.now(timezone.utc).isoformat(),"raw_rows":len(raw),"adjusted_rows":len(adjusted),"flags":len(flags),"approved_events":len(ledger),"unverified_flags":sum(x["status"].startswith("UNVERIFIED") for x in review),"raw_archive_unchanged":True,"fully_corporate_action_verified":False,"historical_membership_verified":False,"eligible_for_real_money":False,"status":"RESEARCH ONLY — FLAG TRIAGE DONE; FULL ACTION COVERAGE AND DEMERGER TOTAL RETURN UNVERIFIED"}
     REPORT.write_text(json.dumps(report,indent=2)+"\n")
     print(json.dumps(report,indent=2))
 if __name__=="__main__":main()
