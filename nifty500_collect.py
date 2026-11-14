@@ -65,12 +65,19 @@ def fetch(day,symbols):
 def main():
     ap=argparse.ArgumentParser();ap.add_argument("--start",default="2024-07-08");ap.add_argument("--days",type=int,default=90);args=ap.parse_args()
     begin=date.fromisoformat(args.start)
-    if begin<START or not 1<=args.days<=180 or begin+timedelta(days=args.days)>datetime.now(timezone.utc).date()+timedelta(days=1):raise SystemExit("Invalid date window")
+    today=datetime.now(timezone.utc).date()
+    if begin<START or not 1<=args.days<=180 or begin>today:
+        raise SystemExit("Invalid date window: start must be between "+str(START)+" and "+str(today)+", days 1-180")
+    requested_end=begin+timedelta(days=args.days)
+    effective_end=min(requested_end,today+timedelta(days=1))
+    if effective_end<requested_end:
+        print("Requested window extends into future; capping end to",effective_end.isoformat(),flush=True)
+    effective_days=(effective_end-begin).days
     symbols=universe();records=read_existing()
     # A previous day's partial universe is never silently deemed complete.
     complete={d for d,n in Counter(d for d,s in records).items() if n>=max(300,int(len(symbols)*0.9))}
     errors=[];new=0
-    for offset in range(args.days):
+    for offset in range(effective_days):
         day=begin+timedelta(days=offset)
         if day.weekday()>=5 or day.isoformat() in complete:continue
         try:
@@ -88,6 +95,6 @@ def main():
     tmp.replace(ARCH)
     days=Counter(d for d,s in records)
     STATUS.parent.mkdir(exist_ok=True)
-    STATUS.write_text(json.dumps({"generated_utc":datetime.now(timezone.utc).isoformat(),"universe":"current Nifty 500","universe_size":len(symbols),"requested_start":args.start,"requested_days":args.days,"new_sessions":new,"sessions":len(days),"records":len(records),"first_date":min(days),"last_date":max(days),"errors":errors,"historical_constituents_verified":False,"corporate_action_adjusted":False,"paper_only":True},indent=2))
+    STATUS.write_text(json.dumps({"generated_utc":datetime.now(timezone.utc).isoformat(),"universe":"current Nifty 500","universe_size":len(symbols),"requested_start":args.start,"requested_days":args.days,"effective_days":effective_days,"new_sessions":new,"sessions":len(days),"records":len(records),"first_date":min(days),"last_date":max(days),"errors":errors,"historical_constituents_verified":False,"corporate_action_adjusted":False,"paper_only":True},indent=2))
     print("ARCHIVE",len(days),"sessions",len(records),"records")
 if __name__=="__main__":main()
