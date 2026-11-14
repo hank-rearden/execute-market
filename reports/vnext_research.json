@@ -1,0 +1,218 @@
+{
+  "version": "vNext-A-E-experimental",
+  "generated_utc": "2026-11-14T04:10:50.996414+00:00",
+  "stage_a": "Research ranking never authorizes trades; valid baseline entry/stop/target mandatory",
+  "stage_b_lite": {
+    "raw_symbols": 100,
+    "excluded_symbols": [
+      "ADANIENT",
+      "ADANIGREEN",
+      "ADANIPOWER",
+      "BAJFINANCE",
+      "BSE",
+      "DRREDDY",
+      "HDFCAMC",
+      "HDFCBANK",
+      "KOTAKBANK",
+      "MAZDOCK",
+      "MOTHERSON",
+      "NESTLEIND",
+      "PIDILITIND",
+      "RELIANCE",
+      "SHRIRAMFIN",
+      "SIEMENS",
+      "TRENT",
+      "VBL",
+      "VEDL",
+      "WIPRO"
+    ],
+    "excluded_count": 20,
+    "clean_symbols": 78,
+    "anomaly_symbols": {
+      "ADANIENT": [
+        "price jump >20%"
+      ],
+      "ADANIGREEN": [
+        "price jump >20%"
+      ],
+      "ADANIPOWER": [
+        "price jump >20%"
+      ],
+      "BAJFINANCE": [
+        "price jump >20%"
+      ],
+      "BSE": [
+        "price jump >20%"
+      ],
+      "DRREDDY": [
+        "price jump >20%"
+      ],
+      "HDFCAMC": [
+        "price jump >20%"
+      ],
+      "HDFCBANK": [
+        "price jump >20%"
+      ],
+      "KOTAKBANK": [
+        "price jump >20%"
+      ],
+      "MAZDOCK": [
+        "price jump >20%"
+      ],
+      "MOTHERSON": [
+        "price jump >20%"
+      ],
+      "NESTLEIND": [
+        "price jump >20%"
+      ],
+      "PIDILITIND": [
+        "price jump >20%"
+      ],
+      "RELIANCE": [
+        "price jump >20%"
+      ],
+      "SHRIRAMFIN": [
+        "price jump >20%"
+      ],
+      "SIEMENS": [
+        "price jump >20%"
+      ],
+      "TRENT": [
+        "price jump >20%"
+      ],
+      "VBL": [
+        "price jump >20%"
+      ],
+      "VEDL": [
+        "price jump >20%"
+      ],
+      "WIPRO": [
+        "price jump >20%"
+      ]
+    },
+    "historical_membership_verified": false,
+    "corporate_actions_adjusted": false
+  },
+  "stage_c": "Predeclared variants: baseline, enhanced, enhanced+volume1.2, enhanced+volume1.5, enhanced+volume1.2+score70",
+  "stage_d": {
+    "train_test_cutoff": "2026-01-13",
+    "train": {
+      "baseline": {
+        "trades": 14,
+        "win_rate_pct": 28.57,
+        "mean_net_return_pct": -1.609,
+        "median_net_return_pct": -1.409,
+        "profit_factor": 0.325,
+        "illustrative_sequential_return_pct": -21.06,
+        "illustrative_max_drawdown_pct": 21.306
+      },
+      "enhanced": {
+        "trades": 14,
+        "win_rate_pct": 28.57,
+        "mean_net_return_pct": -1.885,
+        "median_net_return_pct": -1.879,
+        "profit_factor": 0.269,
+        "illustrative_sequential_return_pct": -24.137,
+        "illustrative_max_drawdown_pct": 24.137
+      },
+      "volume_1_2": {
+        "trades": 3,
+        "win_rate_pct": 33.33,
+        "mean_net_return_pct": -2.364,
+        "median_net_return_pct": -3.302,
+        "profit_factor": 0.414,
+        "illustrative_sequential_return_pct": -7.394,
+        "illustrative_max_drawdown_pct": 8.807
+      },
+      "volume_1_5": {
+        "trades": 2,
+        "win_rate_pct": 50.0,
+        "mean_net_return_pct": 0.858,
+        "median_net_return_pct": 0.858,
+        "profit_factor": 1.52,
+        "illustrative_sequential_return_pct": 1.55,
+        "illustrative_max_drawdown_pct": 3.302
+      },
+      "volume_1_2_score70": {
+        "trades": 3,
+        "win_rate_pct": 33.33,
+        "mean_net_return_pct": -2.364,
+        "median_net_return_pct": -3.302,
+        "profit_factor": 0.414,
+        "illustrative_sequential_return_pct": -7.394,
+        "illustrative_max_drawdown_pct": 8.807
+      }
+    },
+    "untouched_test": {
+      "baseline": {
+        "trades": 14,
+        "win_rate_pct": 28.57,
+        "mean_net_return_pct": -0.236,
+        "median_net_return_pct": -0.85,
+        "profit_factor": 0.872,
+        "illustrative_sequential_return_pct": -5.016,
+        "illustrative_max_drawdown_pct": 14.25
+      },
+      "enhanced": {
+        "trades": 14,
+        "win_rate_pct": 28.57,
+        "mean_net_return_pct": -0.675,
+        "median_net_return_pct": -1.775,
+        "profit_factor": 0.721,
+        "illustrative_sequential_return_pct": -10.874,
+        "illustrative_max_drawdown_pct": 18.497
+      },
+      "volume_1_2": {
+        "trades": 2,
+        "win_rate_pct": 0.0,
+        "mean_net_return_pct": -2.561,
+        "median_net_return_pct": -2.561,
+        "profit_factor": 0.0,
+        "illustrative_sequential_return_pct": -5.091,
+        "illustrative_max_drawdown_pct": 5.091
+      },
+      "volume_1_5": {
+        "trades": 2,
+        "win_rate_pct": 0.0,
+        "mean_net_return_pct": -2.561,
+        "median_net_return_pct": -2.561,
+        "profit_factor": 0.0,
+        "illustrative_sequential_return_pct": -5.091,
+        "illustrative_max_drawdown_pct": 5.091
+      },
+      "volume_1_2_score70": {
+        "trades": 2,
+        "win_rate_pct": 0.0,
+        "mean_net_return_pct": -2.561,
+        "median_net_return_pct": -2.561,
+        "profit_factor": 0.0,
+        "illustrative_sequential_return_pct": -5.091,
+        "illustrative_max_drawdown_pct": 5.091
+      }
+    },
+    "train_selected_model": null,
+    "selected_test": {},
+    "candidate_trades_before_selection": 97,
+    "independent_trade_windows": false,
+    "note": "One selected trade per 10-session signal date; exit can overlap next entry. Returns are not a portfolio NAV."
+  },
+  "stage_e": {
+    "forward_journal": "data/vnext_forward_journal.csv",
+    "future_observations": 0,
+    "ready_for_real_money": false,
+    "research_gate_passed": false,
+    "forward_validation_complete": false
+  },
+  "limitations": [
+    "Present-day Nifty100 constituents cause survivorship bias",
+    "Corporate actions not independently verified; excluded symbols are heuristic",
+    "Excluding full symbols can bias the sample",
+    "No official index benchmark or sector membership",
+    "Daily OHLC cannot resolve intraday order",
+    "Model selection on short development period risks overfitting",
+    "Research gate is necessary, not sufficient for live trading",
+    "10-session sampling reduces but does not eliminate dependent outcomes",
+    "Fees estimated; taxes excluded",
+    "No real orders; no live quotes"
+  ]
+}
