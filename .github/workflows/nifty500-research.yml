@@ -1,0 +1,74 @@
+name: EXECUTE Market - Nifty500 Research Expansion
+on:
+  workflow_dispatch:
+    inputs:
+      start_date:
+        description: "UDiFF archive start date"
+        default: "2024-07-08"
+        required: true
+        type: string
+      calendar_days:
+        description: "Calendar days to fetch, maximum 180 per run"
+        default: "180"
+        required: true
+        type: string
+permissions:
+  contents: write
+concurrency:
+  group: execute-market-nifty500-archive
+  cancel-in-progress: false
+jobs:
+  research:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Collect Nifty500 historical data in separate archive
+        env:
+          START: ${{ inputs.start_date }}
+          DAYS: ${{ inputs.calendar_days }}
+        run: python -u nifty500_collect.py --start "$START" --days "$DAYS"
+      - name: Compare only after enough overlapping data
+        run: |
+          python - <<'PY'
+          import json,subprocess,sys
+          r=json.load(open('reports/nifty500_collection_status.json'))
+          if r['sessions']>=250:
+              subprocess.run([sys.executable,'-u','nifty500_compare.py'],check=True)
+          else:
+              print('Collection incomplete: '+str(r['sessions'])+' sessions; need at least 250. Run next chronological batch.')
+          PY
+      - name: Validate safety and provenance
+        run: |
+          python - <<'PY'
+          import csv,json
+          r=json.load(open('reports/nifty500_collection_status.json'))
+          assert r['universe_size']==500 and r['paper_only'] and not r['historical_constituents_verified'] and not r['corporate_action_adjusted']
+          with open('data/nifty500_research_history.csv',newline='') as f:
+              rows=list(csv.DictReader(f))
+          assert len(rows)==r['records']
+          assert len({(x['date'],x['symbol']) for x in rows})==len(rows)
+          print('Verified research records:',len(rows))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: execute-market-nifty500-research
+          path: |
+            data/nifty500_research_history.csv
+            reports/nifty500_collection_status.json
+            reports/nifty500_comparison.json
+          retention-days: 30
+      - name: Publish separate research reports (production untouched)
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/nifty500_research_history.csv reports/nifty500_collection_status.json
+          if test -f reports/nifty500_comparison.json; then git add reports/nifty500_comparison.json; fi
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "Archive Nifty500 research batch and comparative report"
+          git pull --rebase origin main
+          git push origin HEAD:main
