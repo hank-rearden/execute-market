@@ -1,0 +1,193 @@
+{
+  "version": "nifty500-research-comparison-v1",
+  "generated_utc": "2026-11-14T04:53:39.964940+00:00",
+  "paper_only": true,
+  "ready_for_real_money": false,
+  "common_sessions": 367,
+  "start": "2024-07-08",
+  "end": "2025-12-29",
+  "holdout_cutoff": "2025-07-18",
+  "filters": {
+    "min_20d_average_daily_traded_value_inr": 50000000.0,
+    "relative_strength_lookback_sessions": 63,
+    "min_history": 201,
+    "max_hold_sessions": 10,
+    "anomaly_excluded_symbols": [
+      "ADANIENT",
+      "ADANIGREEN",
+      "ADANIPOWER",
+      "ANANDRATHI",
+      "ASHOKLEY",
+      "BAJFINANCE",
+      "BEML",
+      "BSE",
+      "CAMS",
+      "CDSL",
+      "COFORGE",
+      "CYIENT",
+      "DRREDDY",
+      "ELECON",
+      "GODFRYPHLP",
+      "GPIL",
+      "HDFCAMC",
+      "HDFCBANK",
+      "IEX",
+      "IGL",
+      "INDUSINDBK",
+      "ITI",
+      "JBMA",
+      "JINDALSAW",
+      "KEI",
+      "KIMS",
+      "KOTAKBANK",
+      "KSB",
+      "LALPATHLAB",
+      "MAZDOCK",
+      "MOTHERSON",
+      "MSUMI",
+      "NAUKRI",
+      "NAVA",
+      "NBCC",
+      "NESTLEIND",
+      "NMDC",
+      "NUVAMA",
+      "OLAELEC",
+      "PATANJALI",
+      "PGEL",
+      "PHOENIXLTD",
+      "PIDILITIND",
+      "RELIANCE",
+      "RITES",
+      "RPOWER",
+      "SHRIRAMFIN",
+      "SIEMENS",
+      "STLTECH",
+      "TARIL",
+      "TATAINVEST",
+      "TRENT",
+      "TTML",
+      "VBL",
+      "VEDL",
+      "WIPRO",
+      "ZYDUSWELL"
+    ]
+  },
+  "nifty100": {
+    "eligible_symbols": 73,
+    "candidate_fills": 49,
+    "rejections": {
+      "no_valid_setup": 1066,
+      "anomalous_symbol": 20,
+      "entry_not_triggered": 45
+    },
+    "strategies": {
+      "enhanced": {
+        "development": {
+          "trades": 4,
+          "mean_net_return_pct": -3.878,
+          "win_rate_pct": 0.0,
+          "profit_factor": 0.0
+        },
+        "holdout": {
+          "trades": 8,
+          "mean_net_return_pct": -0.739,
+          "win_rate_pct": 37.5,
+          "profit_factor": 0.614
+        }
+      },
+      "relative_strength_positive": {
+        "development": {
+          "trades": 3,
+          "mean_net_return_pct": -4.443,
+          "win_rate_pct": 0.0,
+          "profit_factor": 0.0
+        },
+        "holdout": {
+          "trades": 8,
+          "mean_net_return_pct": -1.336,
+          "win_rate_pct": 25.0,
+          "profit_factor": 0.323
+        }
+      },
+      "relative_strength_5pp": {
+        "development": {
+          "trades": 2,
+          "mean_net_return_pct": -4.418,
+          "win_rate_pct": 0.0,
+          "profit_factor": 0.0
+        },
+        "holdout": {
+          "trades": 8,
+          "mean_net_return_pct": -1.21,
+          "win_rate_pct": 25.0,
+          "profit_factor": 0.345
+        }
+      }
+    }
+  },
+  "nifty500": {
+    "eligible_symbols": 398,
+    "candidate_fills": 107,
+    "rejections": {
+      "no_valid_setup": 5882,
+      "entry_not_triggered": 103,
+      "anomalous_symbol": 57,
+      "liquidity": 7
+    },
+    "strategies": {
+      "enhanced": {
+        "development": {
+          "trades": 5,
+          "mean_net_return_pct": -3.271,
+          "win_rate_pct": 20.0,
+          "profit_factor": 0.125
+        },
+        "holdout": {
+          "trades": 10,
+          "mean_net_return_pct": 0.024,
+          "win_rate_pct": 50.0,
+          "profit_factor": 1.009
+        }
+      },
+      "relative_strength_positive": {
+        "development": {
+          "trades": 5,
+          "mean_net_return_pct": -3.39,
+          "win_rate_pct": 20.0,
+          "profit_factor": 0.093
+        },
+        "holdout": {
+          "trades": 10,
+          "mean_net_return_pct": -0.453,
+          "win_rate_pct": 40.0,
+          "profit_factor": 0.831
+        }
+      },
+      "relative_strength_5pp": {
+        "development": {
+          "trades": 5,
+          "mean_net_return_pct": -3.39,
+          "win_rate_pct": 20.0,
+          "profit_factor": 0.093
+        },
+        "holdout": {
+          "trades": 10,
+          "mean_net_return_pct": 1.486,
+          "win_rate_pct": 60.0,
+          "profit_factor": 1.913
+        }
+      }
+    }
+  },
+  "limitations": [
+    "Current constituent membership, not historical membership",
+    "Unadjusted corporate actions; exclude suspicious symbols globally",
+    "Historical NSE turnover approximated by close times volume",
+    "Relative strength benchmark is equal-weight current-universe proxy, not official Nifty500 index",
+    "Selection and testing are exploratory; no frozen walk-forward model selected",
+    "One trade per ten-session signal date; not a portfolio NAV",
+    "Daily OHLC entry ordering uncertain; conservative stop-first",
+    "Fees and slippage estimated; capital-gains tax excluded",
+    "No real-money authorization"
+  ]
+}
