@@ -10,17 +10,31 @@ from stage4_archive import BASE,HEADERS,START,check
 ARCH=Path("data/nifty500_research_history.csv")
 STATUS=Path("reports/nifty500_collection_status.json")
 FIELDS=["date","symbol","open","high","low","close","volume"]
-URLS=["https://nsearchives.nseindia.com/content/indices/ind_nifty500list.csv","https://www.niftyindices.com/IndexConstituent/ind_nifty500list.csv"]
+URLS=["https://nsearchives.nseindia.com/content/indices/ind_nifty500list.csv","https://archives.nseindia.com/content/indices/ind_nifty500list.csv","https://www.niftyindices.com/IndexConstituent/ind_nifty500list.csv","https://niftyindices.com/IndexConstituent/ind_nifty500list.csv"]
 def get(url):
     with urllib.request.urlopen(urllib.request.Request(url,headers=HEADERS),timeout=30) as f:return f.read()
 def universe():
+    errors=[]
     for url in URLS:
         try:
-            reader=csv.DictReader(io.StringIO(get(url).decode("utf-8-sig")))
-            syms={r["Symbol"].strip() for r in reader if r.get("Symbol","").strip()}
-            if len(syms)==500:return syms
-        except Exception as e:print("Universe source failed:",str(e)[:120],flush=True)
-    raise RuntimeError("Cannot independently retrieve exactly 500 current Nifty500 constituents")
+            raw=get(url)
+            if not raw or len(raw)>2000000:raise ValueError("Unexpected constituent file size")
+            reader=csv.DictReader(io.StringIO(raw.decode("utf-8-sig")))
+            if not reader.fieldnames:raise ValueError("No CSV headers")
+            names={k.strip().lower():k for k in reader.fieldnames}
+            if "symbol" not in names:raise ValueError("Missing Symbol header: "+str(reader.fieldnames[:8]))
+            col=names["symbol"]
+            syms={r[col].strip() for r in reader if r.get(col,"").strip()}
+            print("Constituent source:",url,"symbols:",len(syms),flush=True)
+            # Index files may temporarily contain an additional line/constituent.
+            # Reject obviously incomplete or wrong-universe downloads.
+            if 480<=len(syms)<=520:
+                return syms
+            errors.append(url+": unexpected count "+str(len(syms)))
+        except Exception as e:
+            errors.append(url+": "+str(e)[:160])
+            print("Universe source failed:",url,str(e)[:160],flush=True)
+    raise RuntimeError("No verified Nifty500 source (480-520 symbols): "+"; ".join(errors))
 def read_existing():
     records={}
     if not ARCH.exists():return records
@@ -54,7 +68,7 @@ def main():
     if begin<START or not 1<=args.days<=180 or begin+timedelta(days=args.days)>datetime.now(timezone.utc).date()+timedelta(days=1):raise SystemExit("Invalid date window")
     symbols=universe();records=read_existing()
     # A previous day's partial universe is never silently deemed complete.
-    complete={d for d,n in Counter(d for d,s in records).items() if n>=450}
+    complete={d for d,n in Counter(d for d,s in records).items() if n>=max(300,int(len(symbols)*0.9))}
     errors=[];new=0
     for offset in range(args.days):
         day=begin+timedelta(days=offset)
