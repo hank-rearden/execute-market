@@ -61,6 +61,16 @@ def main():
     cutoff=common[int(len(common)*.70)]
     def evaluate(data):
         picks=[];reject=defaultdict(int);eligible=set()
+        # Cache the point-in-time proxy once per signal date, not once per symbol.
+        proxies={}
+        for day in common[200:-HOLD:HOLD]:
+            peers=[]
+            for other,otherrows in data.items():
+                if other in bad:continue
+                prior=[x for x in otherrows if x["date"]<=day]
+                if len(prior)>=64 and prior[-1]["date"]==day:
+                    peers.append(prior[-1]["close"]/prior[-64]["close"]-1)
+            proxies[day]=statistics.mean(peers) if len(peers)>=30 else None
         for symbol,rows in data.items():
             if symbol in bad:reject["anomalous_symbol"]+=1;continue
             lookup={r["date"]:i for i,r in enumerate(rows)}
@@ -79,14 +89,8 @@ def main():
                 # equal-weight current-universe proxy; computed only from observed past bars.
                 if len(hist)<64:continue
                 stock63=hist[-1]["close"]/hist[-64]["close"]-1
-                peers=[]
-                for other,otherrows in data.items():
-                    if other in bad:continue
-                    prior=[x for x in otherrows if x["date"]<=day]
-                    if len(prior)>=64 and prior[-1]["date"]==day:
-                        peers.append(prior[-1]["close"]/prior[-64]["close"]-1)
-                if len(peers)<30:continue
-                relative=stock63-statistics.mean(peers)
+                if proxies[day] is None:continue
+                relative=stock63-proxies[day]
                 pnl=simulate(rows,i,baseline)
                 if pnl is None:reject["entry_not_triggered"]+=1;continue
                 picks.append({"date":day,"symbol":symbol,"enhanced":enhanced["enhanced_score"],"relative_strength_pp":round(relative*100,3),"net_return_pct":pnl})
