@@ -1,53 +1,30 @@
 {
-  "generated_utc": "2026-11-14T04:56:13.778964+00:00",
+  "generated_utc": "2026-11-14T05:02:32.763836+00:00",
   "universe": "current Nifty 500",
   "universe_size": 501,
-  "requested_start": "2025-12-30",
-  "requested_days": 180,
-  "new_sessions": 119,
-  "sessions": 486,
-  "records": 224560,
+  "requested_start": "2026-06-27",
+  "requested_days": 140,
+  "effective_days": 140,
+  "new_sessions": 96,
+  "sessions": 582,
+  "records": 271892,
   "first_date": "2024-07-08",
-  "last_date": "2026-06-25",
+  "last_date": "2026-11-13",
   "errors": [
     {
-      "date": "2026-01-15",
+      "date": "2026-09-14",
       "error": "HTTP Error 404: Not Found"
     },
     {
-      "date": "2026-01-26",
+      "date": "2026-10-02",
       "error": "HTTP Error 404: Not Found"
     },
     {
-      "date": "2026-03-03",
+      "date": "2026-10-20",
       "error": "HTTP Error 404: Not Found"
     },
     {
-      "date": "2026-03-26",
-      "error": "HTTP Error 404: Not Found"
-    },
-    {
-      "date": "2026-03-31",
-      "error": "HTTP Error 404: Not Found"
-    },
-    {
-      "date": "2026-04-03",
-      "error": "HTTP Error 404: Not Found"
-    },
-    {
-      "date": "2026-04-14",
-      "error": "HTTP Error 404: Not Found"
-    },
-    {
-      "date": "2026-05-01",
-      "error": "HTTP Error 404: Not Found"
-    },
-    {
-      "date": "2026-05-28",
-      "error": "HTTP Error 404: Not Found"
-    },
-    {
-      "date": "2026-06-26",
+      "date": "2026-11-10",
       "error": "HTTP Error 404: Not Found"
     }
   ],
