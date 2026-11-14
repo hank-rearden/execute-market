@@ -1,0 +1,50 @@
+name: EXECUTE Market - vNext A-E Research
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: execute-market-vnext-research
+  cancel-in-progress: false
+jobs:
+  research:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Run point-in-time experimental research
+        run: python -u vnext_research.py
+      - name: Validate report and hard paper-only gate
+        run: |
+          python - <<'PY'
+          import json
+          r=json.load(open('reports/vnext_research.json'))
+          assert r['stage_e']['ready_for_real_money'] is False
+          assert r['stage_b_lite']['clean_symbols']>0
+          assert r['stage_d']['train_test_cutoff']
+          print('Clean symbols:',r['stage_b_lite']['clean_symbols'])
+          print('Excluded:',r['stage_b_lite']['excluded_count'])
+          print('Selected on train:',r['stage_d']['train_selected_model'])
+          print('Untouched test:',r['stage_d']['selected_test'])
+          print('Research gate:',r['stage_e']['research_gate_passed'])
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: execute-market-vnext-research
+          path: |
+            reports/vnext_research.json
+            reports/vnext_test_trades.csv
+            data/vnext_forward_journal.csv
+      - name: Commit experimental research only
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add reports/vnext_research.json reports/vnext_test_trades.csv data/vnext_forward_journal.csv
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "Publish vNext A-E paper-only research results"
+          git pull --rebase origin main
+          git push origin HEAD:main
